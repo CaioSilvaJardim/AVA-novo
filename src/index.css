@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  cursor: default;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+a, button, [role="button"] {
+  cursor: pointer;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+/* ── Fade-in animation ── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease forwards;
+}
+
+.fade-in-delay-1 { animation: fadeIn 0.4s ease 0.05s forwards; opacity: 0; }
+.fade-in-delay-2 { animation: fadeIn 0.4s ease 0.10s forwards; opacity: 0; }
+.fade-in-delay-3 { animation: fadeIn 0.4s ease 0.15s forwards; opacity: 0; }
+.fade-in-delay-4 { animation: fadeIn 0.4s ease 0.20s forwards; opacity: 0; }
+.fade-in-delay-5 { animation: fadeIn 0.4s ease 0.25s forwards; opacity: 0; }
+.fade-in-delay-6 { animation: fadeIn 0.4s ease 0.30s forwards; opacity: 0; }
+
+/* ── Skeleton pulse ── */
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.3; }
+  50%       { opacity: 0.7; }
+}
+
+.skeleton {
+  background: #7B2FBE;
+  border-radius: 3px;
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+
+/* ── Timeline item stagger ── */
+@keyframes timelineItem {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.timeline-item {
+  opacity: 0;
+  animation: timelineItem 0.35s ease forwards;
+}
+
+/* ── Theme transitions ── */
+.theme-transition,
+.theme-transition * {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease !important;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #0f0f0f; }
+::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #7B2FBE; }
+
+/* ── Light mode scrollbar ── */
+.light ::-webkit-scrollbar-track { background: #e0e0e0; }
+.light ::-webkit-scrollbar-thumb { background: #bbb; }
