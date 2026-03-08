@@ -1,60 +1,166 @@
 /**
  * proxy.ts — Client-side CORS proxy helpers
  *
- * Since this is a pure Vite SPA (no server-side API routes), we use
- * allorigins.win as a CORS proxy to scrape the Moodle login page
- * and extract the dynamic Google OAuth URL (sesskey changes every visit).
+ * Scrapes the Moodle login page through multiple CORS proxy services
+ * to extract the dynamic Google OAuth URL (sesskey changes every visit).
  *
- * For Moodle REST API calls we use the token approach (if available)
- * or direct fetch when the user's browser has the Moodle session cookie
- * (same-origin with wantsurl pointing back to our app).
+ * Strategy:
+ *  1. Try multiple CORS proxy services in sequence
+ *  2. Extract OAuth URL via regex (handles &amp; entities)
+ *  3. Also try extracting sesskey from M.cfg JS object as fallback
+ *  4. Build URL from parts if needed
  */
 
 const MOODLE_BASE = 'https://ava.escolaparque.g12.br'
-const CORS_PROXY = 'https://api.allorigins.win/get?url='
+const MOODLE_LOGIN_URL = `${MOODLE_BASE}/login/index.php`
 
-// ── Scrape Moodle login page and extract Google OAuth URL ─────────────
-export async function fetchGoogleLoginUrl(): Promise<string | null> {
+// Multiple CORS proxy services to try in order
+const CORS_PROXIES = [
+  (url: string) =>
+    `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+  (url: string) =>
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+  (url: string) =>
+    `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  (url: string) =>
+    `https://thingproxy.freeboard.io/fetch/${url}`,
+]
+
+// ── Fetch HTML through a proxy, handling different response formats ────
+async function fetchHtmlViaProxy(
+  proxyFn: (url: string) => string,
+  targetUrl: string,
+  timeoutMs = 8000,
+): Promise<string | null> {
   try {
-    const targetUrl = encodeURIComponent(`${MOODLE_BASE}/login/index.php`)
-    const res = await fetch(`${CORS_PROXY}${targetUrl}`, {
-      signal: AbortSignal.timeout(10000),
+    const proxyUrl = proxyFn(targetUrl)
+    const res = await fetch(proxyUrl, {
+      signal: AbortSignal.timeout(timeoutMs),
+      headers: {
+        Accept: 'application/json, text/plain, */*',
+      },
     })
-    if (!res.ok) throw new Error(`CORS proxy returned ${res.status}`)
-    const data = await res.json()
-    const html: string = data.contents || ''
 
-    // Extract href from <a class="login-identityprovider-btn" href="...">
-    // Pattern: auth/oauth2/login.php?id=1&...&sesskey=XXXXXXXX
-    const match = html.match(
-      /href="(https?:\/\/ava\.escolaparque\.g12\.br\/auth\/oauth2\/login\.php[^"]+)"/,
-    )
-    if (match && match[1]) {
-      // Decode HTML entities
-      return match[1].replace(/&amp;/g, '&')
+    if (!res.ok) return null
+
+    const contentType = res.headers.get('content-type') || ''
+
+    // allorigins / codetabs return JSON { contents: "..." }
+    if (contentType.includes('application/json')) {
+      try {
+        const json = await res.json()
+        return typeof json.contents === 'string'
+          ? json.contents
+          : typeof json === 'string'
+            ? json
+            : null
+      } catch {
+        return null
+      }
     }
 
-    // Fallback: search for any oauth2 login link
-    const fallback = html.match(/href="([^"]*auth\/oauth2\/login\.php[^"]*)"/i)
-    if (fallback && fallback[1]) {
-      return fallback[1].replace(/&amp;/g, '&')
-    }
-
-    return null
-  } catch (err) {
-    console.warn('[proxy] fetchGoogleLoginUrl failed:', err)
+    // corsproxy.io / thingproxy return raw HTML
+    const text = await res.text()
+    return text || null
+  } catch {
     return null
   }
 }
 
-// ── Extract sesskey from an OAuth URL ────────────────────────────────
-export function extractSesskey(url: string): string | null {
-  try {
-    const u = new URL(url)
-    return u.searchParams.get('sesskey')
-  } catch {
+// ── Extract Google OAuth URL from raw HTML ────────────────────────────
+function extractOAuthUrl(html: string): string | null {
+  // Primary: match the full href with or without HTML entities
+  const patterns = [
+    // With &amp; (HTML entities) — most common in raw HTML
+    /href="(https?:\/\/ava\.escolaparque\.g12\.br\/auth\/oauth2\/login\.php[^"]+)"/i,
+    // Without entities (already decoded)
+    /href='(https?:\/\/ava\.escolaparque\.g12\.br\/auth\/oauth2\/login\.php[^']+)'/i,
+    // Just the path
+    /href="(\/auth\/oauth2\/login\.php[^"]+)"/i,
+  ]
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern)
+    if (match && match[1]) {
+      let url = match[1]
+        .replace(/&amp;/g, '&')
+        .replace(/&#38;/g, '&')
+        .trim()
+
+      // Ensure absolute URL
+      if (url.startsWith('/')) {
+        url = `${MOODLE_BASE}${url}`
+      }
+
+      // Validate it has a sesskey param
+      try {
+        const parsed = new URL(url)
+        if (parsed.searchParams.get('sesskey')) {
+          return url
+        }
+      } catch {
+        // continue trying
+      }
+    }
+  }
+
+  return null
+}
+
+// ── Extract sesskey from M.cfg JS block ──────────────────────────────
+function extractSesskey(html: string): string | null {
+  // M.cfg = {"...","sesskey":"XXXXXXXXXX",...}
+  const match = html.match(/"sesskey"\s*:\s*"([^"]+)"/)
+  return match ? match[1] : null
+}
+
+// ── Build Google OAuth URL from sesskey ──────────────────────────────
+function buildOAuthUrl(sesskey: string): string {
+  const wantsurl = encodeURIComponent(`${MOODLE_BASE}/`)
+  return `${MOODLE_BASE}/auth/oauth2/login.php?id=1&wantsurl=${wantsurl}&sesskey=${sesskey}`
+}
+
+// ── Main: fetch Google login URL with dynamic sesskey ─────────────────
+export async function fetchGoogleLoginUrl(): Promise<string | null> {
+  let html: string | null = null
+
+  // Try each proxy in sequence until one works
+  for (let i = 0; i < CORS_PROXIES.length; i++) {
+    const proxyFn = CORS_PROXIES[i]
+    console.log(`[proxy] Trying CORS proxy ${i + 1}/${CORS_PROXIES.length}...`)
+
+    html = await fetchHtmlViaProxy(proxyFn, MOODLE_LOGIN_URL, 8000)
+
+    if (html && html.length > 500) {
+      console.log(`[proxy] Got HTML (${html.length} chars) from proxy ${i + 1}`)
+      break
+    }
+
+    html = null
+  }
+
+  if (!html) {
+    console.warn('[proxy] All CORS proxies failed — no HTML retrieved')
     return null
   }
+
+  // Try to extract full OAuth URL directly
+  const oauthUrl = extractOAuthUrl(html)
+  if (oauthUrl) {
+    console.log('[proxy] Extracted OAuth URL:', oauthUrl)
+    return oauthUrl
+  }
+
+  // Fallback: build URL from sesskey only
+  const sesskey = extractSesskey(html)
+  if (sesskey) {
+    const builtUrl = buildOAuthUrl(sesskey)
+    console.log('[proxy] Built OAuth URL from sesskey:', builtUrl)
+    return builtUrl
+  }
+
+  console.warn('[proxy] Could not extract OAuth URL or sesskey from HTML')
+  return null
 }
 
 // ── Moodle REST call via CORS proxy (session-based, no token) ────────
@@ -67,45 +173,42 @@ export async function moodleProxyRest<T>(
   wsfunction: string,
   extraParams: Record<string, string | number> = {},
 ): Promise<ProxyCallResult<T>> {
-  try {
-    const params = new URLSearchParams({
-      wsfunction,
-      moodlewsrestformat: 'json',
-      ...Object.fromEntries(
-        Object.entries(extraParams).map(([k, v]) => [k, String(v)]),
-      ),
-    })
+  const params = new URLSearchParams({
+    wsfunction,
+    moodlewsrestformat: 'json',
+    ...Object.fromEntries(
+      Object.entries(extraParams).map(([k, v]) => [k, String(v)]),
+    ),
+  })
 
-    const targetUrl = encodeURIComponent(
-      `${MOODLE_BASE}/webservice/rest/server.php?${params.toString()}`,
-    )
+  const targetUrl = `${MOODLE_BASE}/webservice/rest/server.php?${params.toString()}`
 
-    const res = await fetch(`${CORS_PROXY}${targetUrl}`, {
-      signal: AbortSignal.timeout(15000),
-    })
+  let lastError = 'Todas as tentativas falharam'
 
-    if (!res.ok) throw new Error(`Proxy error ${res.status}`)
-
-    const wrapper = await res.json()
-    const raw = wrapper.contents
-
-    let parsed: unknown
+  for (let i = 0; i < CORS_PROXIES.length; i++) {
     try {
-      parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
-    } catch {
-      throw new Error('Resposta inválida do servidor Moodle.')
-    }
+      const html = await fetchHtmlViaProxy(CORS_PROXIES[i], targetUrl, 12000)
+      if (!html) continue
 
-    if (parsed && typeof parsed === 'object' && 'exception' in parsed) {
-      const p = parsed as { message?: string; exception?: string }
-      return { error: p.message || p.exception || 'Erro Moodle' }
-    }
+      let parsed: unknown
+      try {
+        parsed = JSON.parse(html)
+      } catch {
+        continue
+      }
 
-    return { data: parsed as T }
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Erro desconhecido'
-    return { error: msg }
+      if (parsed && typeof parsed === 'object' && 'exception' in parsed) {
+        const p = parsed as { message?: string; exception?: string }
+        return { error: p.message || p.exception || 'Erro Moodle' }
+      }
+
+      return { data: parsed as T }
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : 'Erro desconhecido'
+    }
   }
+
+  return { error: lastError }
 }
 
 // ── Check if user has an active Moodle session (via proxy) ───────────
