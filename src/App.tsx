@@ -7,6 +7,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<LoginPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
+      {/* Catch-all → login */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

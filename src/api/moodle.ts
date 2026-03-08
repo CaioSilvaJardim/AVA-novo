@@ -1,5 +1,17 @@
+/**
+ * moodle.ts — Moodle REST API client
+ *
+ * Supports two authentication modes:
+ *   1. TOKEN mode  — uses wstoken= parameter (moodle_mobile_app service)
+ *   2. SESSION mode — uses the CORS proxy (allorigins) with session cookies
+ *      (session cookies are handled by the browser automatically after OAuth)
+ *
+ * For the session-based proxy, see proxy.ts → moodleProxyRest.
+ */
+
 const MOODLE_BASE = 'https://ava.escolaparque.g12.br'
 
+// ── Types ─────────────────────────────────────────────────────────────
 export interface MoodleCourse {
   id: number
   fullname: string
@@ -29,28 +41,66 @@ export interface MoodleTimelineEvent {
   action?: { actionable: boolean; url: string }
 }
 
-// ── Auth ──────────────────────────────────────────────────────────────
+export interface MoodleSiteInfo {
+  userid: number
+  username: string
+  fullname: string
+  sitename: string
+}
+
+// ── Auth: token login (manual username/password) ─────────────────────
 export async function moodleLogin(
   username: string,
   password: string,
-): Promise<{ token: string; error?: string }> {
+): Promise<{ token: string }> {
   const params = new URLSearchParams({
     username,
     password,
     service: 'moodle_mobile_app',
   })
+
   const res = await fetch(`${MOODLE_BASE}/login/token.php`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: params.toString(),
+    mode: 'cors',
   })
+
+  if (!res.ok) {
+    throw new Error(`Erro de rede: ${res.status} ${res.statusText}`)
+  }
+
   const data = await res.json()
-  if (data.error) throw new Error(data.error)
-  if (!data.token) throw new Error('Token não recebido do servidor.')
+
+  if (data.error) {
+    const msg: string = data.error
+    if (
+      msg.includes('enablewsdescription') ||
+      msg.includes('web service') ||
+      msg.includes('not enabled')
+    ) {
+      throw new Error(
+        'API REST não habilitada no servidor. Use o login com Google.',
+      )
+    }
+    if (
+      msg.includes('Invalid login') ||
+      msg.includes('invalid login') ||
+      msg.includes('invalidlogin')
+    ) {
+      throw new Error('Usuário ou senha incorretos.')
+    }
+    throw new Error(data.error)
+  }
+
+  if (!data.token) {
+    throw new Error('Token não recebido. Verifique suas credenciais.')
+  }
+
   return { token: data.token }
 }
 
-// ── Generic REST call ─────────────────────────────────────────────────
+// ── Generic REST call (token-based) ───────────────────────────────────
 export async function moodleRest<T>(
   token: string,
   wsfunction: string,
@@ -64,24 +114,24 @@ export async function moodleRest<T>(
       Object.entries(extraParams).map(([k, v]) => [k, String(v)]),
     ),
   })
+
   const res = await fetch(`${MOODLE_BASE}/webservice/rest/server.php`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: params.toString(),
   })
+
   const data = await res.json()
   if (data && data.exception) throw new Error(data.message || data.exception)
   return data as T
 }
 
-// ── Site info (to get userid) ─────────────────────────────────────────
-export async function getSiteInfo(
-  token: string,
-): Promise<{ userid: number; username: string; fullname: string }> {
-  return moodleRest(token, 'core_webservice_get_site_info')
+// ── Site info (token mode) ────────────────────────────────────────────
+export async function getSiteInfo(token: string): Promise<MoodleSiteInfo> {
+  return moodleRest<MoodleSiteInfo>(token, 'core_webservice_get_site_info')
 }
 
-// ── Courses ───────────────────────────────────────────────────────────
+// ── Courses (token mode) ──────────────────────────────────────────────
 export async function getUserCourses(
   token: string,
   userid: number,
@@ -94,7 +144,7 @@ export async function getUserCourses(
   return Array.isArray(data) ? data : []
 }
 
-// ── Upcoming events ───────────────────────────────────────────────────
+// ── Upcoming events (token mode) ──────────────────────────────────────
 export async function getUpcomingEvents(
   token: string,
 ): Promise<MoodleEvent[]> {
@@ -105,7 +155,7 @@ export async function getUpcomingEvents(
   return Array.isArray(data?.events) ? data.events : []
 }
 
-// ── Timeline ──────────────────────────────────────────────────────────
+// ── Timeline (token mode) ─────────────────────────────────────────────
 export async function getTimelineEvents(
   token: string,
 ): Promise<MoodleTimelineEvent[]> {
@@ -121,3 +171,7 @@ export async function getTimelineEvents(
   )
   return Array.isArray(data?.events) ? data.events : []
 }
+
+// ── Session-based calls (via proxy, no token) ─────────────────────────
+// These use moodleProxyRest from proxy.ts — imported by dashboard
+export { moodleProxyRest } from './proxy'
