@@ -1,0 +1,183 @@
+/* =============================================================
+   AVA — Escola Parque | popup.css
+   ============================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+* {
+  margin:      0;
+  padding:     0;
+  box-sizing:  border-box;
+  border-radius: 0 !important;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+body {
+  width:      280px;
+  background: #080808;
+  color:      #E0E0E0;
+  font-size:  12px;
+  min-height: fit-content;
+  overflow:   hidden;
+}
+
+/* ── Header ──────────────────────────────────────────────────── */
+.popup-header {
+  padding:       14px 16px 10px;
+  background:    #0f0f0f;
+  border-bottom: 1px solid #1f1f1f;
+}
+
+.popup-logo {
+  font-size:      0.82rem;
+  font-weight:    700;
+  color:          #9B4DCA;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.popup-tagline {
+  font-size:  0.68rem;
+  color:      #444;
+  margin-top: 2px;
+}
+
+/* ── Divider ─────────────────────────────────────────────────── */
+.popup-divider {
+  height:     1px;
+  background: #1f1f1f;
+  margin:     0;
+}
+
+/* ── Body ────────────────────────────────────────────────────── */
+.popup-body {
+  padding: 8px 0;
+}
+
+/* ── Toggle row ──────────────────────────────────────────────── */
+.toggle-row {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         10px 16px;
+  border-bottom:   1px solid #111;
+  transition:      background 0.15s ease;
+}
+.toggle-row:last-child {
+  border-bottom: none;
+}
+.toggle-row:hover {
+  background: #0f0f0f;
+}
+
+.toggle-info {
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+}
+
+.toggle-label {
+  font-size:      0.75rem;
+  font-weight:    700;
+  color:          #E0E0E0;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.toggle-desc {
+  font-size: 0.65rem;
+  color:     #444;
+}
+
+/* ── Toggle switch ───────────────────────────────────────────── */
+.toggle-switch {
+  position: relative;
+  display:  inline-flex;
+  cursor:   pointer;
+}
+.toggle-switch input {
+  opacity:  0;
+  width:    0;
+  height:   0;
+  position: absolute;
+}
+
+.toggle-track {
+  display:          flex;
+  align-items:      center;
+  width:            40px;
+  height:           22px;
+  background:       #1a1a1a;
+  border:           1px solid #2a2a2a;
+  position:         relative;
+  cursor:           pointer;
+  transition:       background 0.2s ease, border-color 0.2s ease;
+}
+
+.toggle-thumb {
+  position:   absolute;
+  left:        3px;
+  width:       14px;
+  height:      14px;
+  background:  #444;
+  transition:  left 0.2s ease, background 0.2s ease;
+}
+
+/* Checked state */
+.toggle-switch input:checked + .toggle-track {
+  background:   #1a0a2e;
+  border-color: #7B2FBE;
+}
+.toggle-switch input:checked + .toggle-track .toggle-thumb {
+  left:       21px;
+  background: #7B2FBE;
+}
+
+/* Focus */
+.toggle-switch input:focus + .toggle-track {
+  border-color: #9B4DCA;
+  outline:      2px solid #9B4DCA;
+  outline-offset: 1px;
+}
+
+/* ── Quick links ─────────────────────────────────────────────── */
+.popup-links {
+  padding:        6px 0;
+  display:        flex;
+  flex-direction: column;
+}
+
+.popup-link {
+  display:         block;
+  padding:         8px 16px;
+  font-size:       0.72rem;
+  color:           #888;
+  text-decoration: none;
+  letter-spacing:  0.02em;
+  transition:      color 0.15s ease, background 0.15s ease;
+  border-left:     2px solid transparent;
+}
+.popup-link:hover {
+  color:        #9B4DCA;
+  background:   #0f0f0f;
+  border-left:  2px solid #7B2FBE;
+}
+
+/* ── Footer ──────────────────────────────────────────────────── */
+.popup-footer {
+  display:         flex;
+  justify-content: space-between;
+  align-items:     center;
+  padding:         10px 16px;
+  background:      #050505;
+}
+
+.popup-version {
+  font-size: 0.65rem;
+  color:     #333;
+}
+
+.popup-credit {
+  font-size: 0.65rem;
+  color:     #333;
+}

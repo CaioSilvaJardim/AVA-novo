@@ -1,0 +1,815 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+/* =============================================
+   BASE
+   ============================================= */
+body.ava-redesign-active {
+  background: #080808 !important;
+  color: #E0E0E0 !important;
+}
+body.ava-redesign-active *:not(i):not(.fa):not(.icon):not([class*="fa-"]):not(.userpicture) {
+  font-family: 'JetBrains Mono', monospace !important;
+}
+body.ava-redesign-active i,
+body.ava-redesign-active i.fa,
+body.ava-redesign-active i.icon,
+body.ava-redesign-active [class*="fa-"] {
+  font-family: 'Font Awesome 6 Free', 'FontAwesome' !important;
+  -webkit-font-smoothing: antialiased;
+}
+body.ava-redesign-active * {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transition: background 0.15s, color 0.15s, border-color 0.15s !important;
+}
+body.ava-redesign-active a {
+  color: #9B4DCA !important;
+  text-decoration: none !important;
+}
+body.ava-redesign-active a:hover {
+  color: #B06AE8 !important;
+}
+
+/* =============================================
+   SCROLLBAR
+   ============================================= */
+body.ava-redesign-active ::-webkit-scrollbar { width: 6px !important; }
+body.ava-redesign-active ::-webkit-scrollbar-track { background: #080808 !important; }
+body.ava-redesign-active ::-webkit-scrollbar-thumb { background: #7B2FBE !important; }
+
+/* =============================================
+   SCANLINES
+   ============================================= */
+body.ava-redesign-active::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 99998;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+}
+
+/* =============================================
+   LAYOUT EXPANSION
+   ============================================= */
+body.ava-redesign-active #page,
+body.ava-redesign-active #page-wrapper,
+body.ava-redesign-active #page-content,
+body.ava-redesign-active #topofscroll,
+body.ava-redesign-active #region-main,
+body.ava-redesign-active #region-main-box,
+body.ava-redesign-active .main-inner,
+body.ava-redesign-active .main-inner-wrapper,
+body.ava-redesign-active .container-fluid {
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+body.ava-redesign-active .limitedwidth #page.drawers {
+  max-width: 100% !important;
+}
+
+/* =============================================
+   NAVBAR
+   ============================================= */
+body.ava-redesign-active .navbar,
+body.ava-redesign-active .navbar.fixed-top {
+  background: #0f0f0f !important;
+  border-bottom: 1px solid #1f1f1f !important;
+  height: 52px !important;
+}
+body.ava-redesign-active .navbar .nav-link {
+  color: #888 !important;
+  font-size: 0.8rem !important;
+}
+body.ava-redesign-active .navbar .nav-link:hover,
+body.ava-redesign-active .navbar .nav-link.active {
+  color: #9B4DCA !important;
+}
+body.ava-redesign-active .ava-brand-text {
+  color: #9B4DCA !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+  letter-spacing: 1px !important;
+}
+body.ava-redesign-active #usernavigation .btn,
+body.ava-redesign-active #usernavigation a.nav-link,
+body.ava-redesign-active #usernavigation .popover-region-toggle,
+body.ava-redesign-active #usernavigation .dropdown-toggle {
+  background: transparent !important;
+  border: none !important;
+  color: #9B4DCA !important;
+}
+body.ava-redesign-active #usernavigation i {
+  color: #9B4DCA !important;
+}
+body.ava-redesign-active #usernavigation .divider {
+  border-color: #2a2a2a !important;
+}
+
+/* =============================================
+   HIDE ELEMENTS (dashboard)
+   ============================================= */
+body.ava-redesign-active #inst552596,
+body.ava-redesign-active #inst492307,
+body.ava-redesign-active #theme_boost-drawers-blocks,
+body.ava-redesign-active .drawer-right-toggle,
+body.ava-redesign-active .drawer-toggler,
+body.ava-redesign-active #page-header,
+body.ava-redesign-active .learningtools-action-info,
+body.ava-redesign-active .floating-button,
+body.ava-redesign-active #page-footer,
+body.ava-redesign-active #footnote,
+body.ava-redesign-active .footer-popover,
+body.ava-redesign-active .drawer-toggles {
+  display: none !important;
+}
+
+/* =============================================
+   DASHBOARD GRID
+   ============================================= */
+body.ava-redesign-active #ava-dashboard-grid {
+  display: flex !important;
+  max-width: 1400px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  padding: 80px 24px 32px !important;
+  gap: 20px !important;
+  box-sizing: border-box !important;
+}
+body.ava-redesign-active #ava-col-left {
+  flex: 3 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  min-width: 0 !important;
+}
+body.ava-redesign-active #ava-col-right {
+  flex: 2 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  min-width: 0 !important;
+}
+@media (max-width: 768px) {
+  body.ava-redesign-active #ava-dashboard-grid {
+    flex-direction: column !important;
+    padding: 64px 12px 16px !important;
+  }
+}
+
+/* =============================================
+   CARDS & BLOCKS
+   ============================================= */
+body.ava-redesign-active .card,
+body.ava-redesign-active .card-body,
+body.ava-redesign-active .card-header,
+body.ava-redesign-active .card-footer,
+body.ava-redesign-active .block,
+body.ava-redesign-active [data-block],
+body.ava-redesign-active section.card {
+  background: #0f0f0f !important;
+  border: 1px solid #1f1f1f !important;
+  color: #E0E0E0 !important;
+}
+
+/* =============================================
+   BLOCK TITLES
+   ============================================= */
+body.ava-redesign-active .ava-block-title {
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  color: #E0E0E0 !important;
+  border-left: 3px solid #7B2FBE !important;
+  padding-left: 10px !important;
+  margin-bottom: 12px !important;
+  letter-spacing: 1px !important;
+  display: block !important;
+}
+
+/* =============================================
+   TIMELINE
+   ============================================= */
+body.ava-redesign-active section[data-block="timeline"] .card-text {
+  border-left: 2px solid #7B2FBE !important;
+  margin-left: 6px !important;
+  padding-left: 16px !important;
+}
+body.ava-redesign-active section[data-block="timeline"] .list-group-item {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid #1a1a1a !important;
+  padding: 8px 8px 8px 16px !important;
+  position: relative !important;
+  color: #E0E0E0 !important;
+}
+body.ava-redesign-active section[data-block="timeline"] .list-group-item::before {
+  content: '' !important;
+  position: absolute !important;
+  left: -22px !important;
+  top: 14px !important;
+  width: 8px !important;
+  height: 8px !important;
+  background: #7B2FBE !important;
+  border-radius: 50% !important;
+}
+body.ava-redesign-active section[data-block="timeline"] .list-group-item:hover {
+  background: #141414 !important;
+}
+body.ava-redesign-active section[data-block="timeline"] .btn-outline-secondary {
+  background: #0f0f0f !important;
+  border-color: #2a2a2a !important;
+  color: #888 !important;
+  font-size: 0.75rem !important;
+}
+body.ava-redesign-active section[data-block="timeline"] .form-control {
+  background: #0f0f0f !important;
+  border-color: #2a2a2a !important;
+  color: #E0E0E0 !important;
+  font-size: 0.75rem !important;
+}
+
+/* =============================================
+   AGENDA
+   ============================================= */
+body.ava-redesign-active section[data-block="calendar_upcoming"] .event {
+  border-bottom-color: #1a1a1a !important;
+  padding: 8px 4px !important;
+}
+body.ava-redesign-active section[data-block="calendar_upcoming"] .event:hover {
+  background: #141414 !important;
+}
+body.ava-redesign-active section[data-block="calendar_upcoming"] .event h6 a {
+  color: #E0E0E0 !important;
+  font-size: 0.8rem !important;
+}
+body.ava-redesign-active section[data-block="calendar_upcoming"] .date {
+  color: #666 !important;
+  font-size: 0.7rem !important;
+}
+
+/* =============================================
+   CALENDAR — scale to 60%
+   ============================================= */
+body.ava-redesign-active section[data-block="calendar_month"] {
+  overflow: visible !important;
+}
+body.ava-redesign-active section[data-block="calendar_month"] .maincalendar {
+  transform: scale(0.6) !important;
+  transform-origin: top left !important;
+  overflow: visible !important;
+}
+/* Collapse the space taken by scaled calendar */
+body.ava-redesign-active section[data-block="calendar_month"] .card-body {
+  height: 220px !important;
+  overflow: hidden !important;
+  padding: 4px !important;
+}
+/* Hide footer and new event button */
+body.ava-redesign-active section[data-block="calendar_month"] .footer,
+body.ava-redesign-active section[data-block="calendar_month"] .header {
+  display: none !important;
+}
+
+/* Calendar navigation */
+body.ava-redesign-active .calendar-controls {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 4px 2px !important;
+  margin-bottom: 4px !important;
+}
+body.ava-redesign-active .calendar-controls h4.current {
+  font-size: 0.9rem !important;
+  color: #E0E0E0 !important;
+  margin: 0 !important;
+}
+body.ava-redesign-active .calendar-controls .arrow_link {
+  font-size: 0.85rem !important;
+  color: #9B4DCA !important;
+  padding: 2px 8px !important;
+}
+body.ava-redesign-active .calendar-controls .arrow_text {
+  display: none !important;
+}
+
+/* Calendar table */
+body.ava-redesign-active .calendarmonth {
+  width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+}
+body.ava-redesign-active .calendarmonth thead th {
+  font-size: 0.75rem !important;
+  color: #555 !important;
+  text-align: center !important;
+  padding: 4px 0 !important;
+  border: none !important;
+  background: transparent !important;
+  font-weight: 400 !important;
+}
+body.ava-redesign-active .calendarmonth td {
+  text-align: center !important;
+  vertical-align: middle !important;
+  padding: 3px 0 !important;
+  height: 36px !important;
+  font-size: 0.85rem !important;
+  color: #888 !important;
+  border: none !important;
+  background: transparent !important;
+  overflow: hidden !important;
+  line-height: 1 !important;
+}
+body.ava-redesign-active .calendarmonth td.dayblank {
+  background: transparent !important;
+}
+body.ava-redesign-active .calendarmonth .day-number-circle {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  margin: 0 auto !important;
+  line-height: 1 !important;
+}
+body.ava-redesign-active .calendarmonth .day-number {
+  font-size: 0.85rem !important;
+  line-height: 1 !important;
+  display: block !important;
+  width: 100% !important;
+  text-align: center !important;
+}
+/* Show desktop, hide mobile duplicate */
+body.ava-redesign-active .calendarmonth td .d-md-none {
+  display: none !important;
+}
+body.ava-redesign-active .calendarmonth td .d-none.d-md-block {
+  display: block !important;
+}
+/* Hide event list inside cells */
+body.ava-redesign-active .calendarmonth [data-region="day-content"] {
+  display: none !important;
+}
+body.ava-redesign-active .calendarmonth td .hidden {
+  display: none !important;
+}
+/* Today — purple */
+body.ava-redesign-active .calendarmonth td.today .day-number-circle {
+  background: #7B2FBE !important;
+  color: #fff !important;
+}
+body.ava-redesign-active .calendarmonth td.today .day-number {
+  color: #fff !important;
+}
+/* Days with events */
+body.ava-redesign-active .calendarmonth td.hasevent {
+  border-bottom: 2px solid #7B2FBE !important;
+}
+body.ava-redesign-active .calendarmonth td.hasevent a.aalink {
+  color: #9B4DCA !important;
+}
+
+/* =============================================
+   CALENDAR POPOVER — dark
+   ============================================= */
+body.ava-redesign-active .popover,
+body.ava-redesign-active .tooltip,
+body.ava-redesign-active .tooltip-inner,
+body.ava-redesign-active .popover-body,
+body.ava-redesign-active .popover-header,
+body.ava-redesign-active .moodle-dialogue-base,
+body.ava-redesign-active .moodle-dialogue-wrap,
+body.ava-redesign-active .moodle-dialogue-content,
+body.ava-redesign-active .moodle-dialogue-bd {
+  background: #0f0f0f !important;
+  background-color: #0f0f0f !important;
+  color: #E0E0E0 !important;
+  border-color: #2a2a2a !important;
+}
+
+/* =============================================
+   COURSES BLOCK (dashboard sidebar)
+   ============================================= */
+body.ava-redesign-active #ava-course-list {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+body.ava-redesign-active #ava-course-list li {
+  padding: 6px 8px !important;
+  border-bottom: 1px solid #1a1a1a !important;
+  font-size: 0.75rem !important;
+}
+body.ava-redesign-active #ava-course-list li:hover {
+  background: #141414 !important;
+}
+body.ava-redesign-active #ava-course-list li a {
+  color: #E0E0E0 !important;
+}
+body.ava-redesign-active #ava-course-list li a:hover {
+  color: #9B4DCA !important;
+}
+body.ava-redesign-active .ava-show-all-btn {
+  display: inline-block !important;
+  margin-top: 8px !important;
+  padding: 4px 12px !important;
+  background: #0f0f0f !important;
+  border: 1px solid #7B2FBE !important;
+  color: #9B4DCA !important;
+  font-size: 0.7rem !important;
+  cursor: pointer !important;
+  text-transform: uppercase !important;
+}
+body.ava-redesign-active .ava-show-all-btn:hover {
+  border-color: #B06AE8 !important;
+  color: #B06AE8 !important;
+}
+
+/* =============================================
+   FLOATING BUTTONS — bottom left
+   ============================================= */
+body.ava-redesign-active #ava-float-btns {
+  position: fixed !important;
+  bottom: 16px !important;
+  left: 16px !important;
+  right: auto !important;
+  z-index: 99999 !important;
+  display: flex !important;
+  gap: 8px !important;
+}
+body.ava-redesign-active .ava-float-btn {
+  background: #080808 !important;
+  border: 1px solid #7B2FBE !important;
+  color: #9B4DCA !important;
+  padding: 4px 10px !important;
+  font-size: 0.6rem !important;
+  cursor: pointer !important;
+  text-transform: uppercase !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  letter-spacing: 0.5px !important;
+}
+body.ava-redesign-active .ava-float-btn:hover {
+  border-color: #B06AE8 !important;
+  color: #B06AE8 !important;
+}
+
+/* =============================================
+   INPUTS & FORMS
+   ============================================= */
+body.ava-redesign-active .form-control,
+body.ava-redesign-active select,
+body.ava-redesign-active textarea,
+body.ava-redesign-active input[type="text"],
+body.ava-redesign-active input[type="search"],
+body.ava-redesign-active input[type="password"] {
+  background: #0f0f0f !important;
+  border: 1px solid #2a2a2a !important;
+  color: #E0E0E0 !important;
+  font-size: 0.8rem !important;
+}
+body.ava-redesign-active .form-control:focus {
+  border-color: #7B2FBE !important;
+  outline: none !important;
+}
+body.ava-redesign-active .btn {
+  background: #0f0f0f !important;
+  border: 1px solid #2a2a2a !important;
+  color: #888 !important;
+  font-size: 0.75rem !important;
+}
+body.ava-redesign-active .btn:hover {
+  border-color: #7B2FBE !important;
+  color: #9B4DCA !important;
+}
+body.ava-redesign-active .btn-primary {
+  background: #7B2FBE !important;
+  border-color: #7B2FBE !important;
+  color: #fff !important;
+}
+body.ava-redesign-active .dropdown-menu {
+  background: #0f0f0f !important;
+  border: 1px solid #2a2a2a !important;
+}
+body.ava-redesign-active .dropdown-item {
+  color: #E0E0E0 !important;
+  font-size: 0.75rem !important;
+}
+body.ava-redesign-active .dropdown-item:hover {
+  background: #141414 !important;
+  color: #9B4DCA !important;
+}
+
+/* =============================================
+   NOTIFICATION POPOVERS
+   ============================================= */
+body.ava-redesign-active .popover-region-container {
+  background: #0f0f0f !important;
+  border: 1px solid #2a2a2a !important;
+}
+body.ava-redesign-active .popover-region-header-container {
+  background: #0f0f0f !important;
+  border-bottom: 1px solid #1f1f1f !important;
+}
+body.ava-redesign-active .popover-region-header-text {
+  color: #E0E0E0 !important;
+}
+body.ava-redesign-active .popover-region-content,
+body.ava-redesign-active .popover-region-footer-container {
+  background: #0f0f0f !important;
+}
+
+/* =============================================
+   DRAWERS
+   ============================================= */
+body.ava-redesign-active .drawer,
+body.ava-redesign-active .drawer-left,
+body.ava-redesign-active .drawer-right,
+body.ava-redesign-active .drawer-primary {
+  background: #0f0f0f !important;
+}
+body.ava-redesign-active .list-group-item {
+  background: transparent !important;
+  border-color: #1f1f1f !important;
+  color: #E0E0E0 !important;
+}
+body.ava-redesign-active .list-group-item:hover {
+  background: #141414 !important;
+}
+body.ava-redesign-active .list-group-item.active {
+  background: #141414 !important;
+  border-color: #7B2FBE !important;
+  color: #9B4DCA !important;
+}
+
+/* =============================================
+   LOGIN
+   ============================================= */
+/* Force hide ALL original Moodle login UI */
+body.ava-redesign-active.page-login-index #page-wrapper,
+body.ava-redesign-active.page-login-index #page,
+body.ava-redesign-active.page-login-index .login-wrapper,
+body.ava-redesign-active.page-login-index .login-container,
+body.ava-redesign-active.page-login-index .loginform,
+body.ava-redesign-active.page-login-index #region-main,
+body.ava-redesign-active.page-login-index #page-content,
+body.ava-redesign-active.page-login-index #page-header,
+body.ava-redesign-active.page-login-index #page-footer,
+body.ava-redesign-active.page-login-index #footnote {
+  display: none !important;
+}
+
+body.ava-redesign-active #ava-login-container {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 100vh !important;
+  background: #000 !important;
+  animation: avaFadeIn 0.5s ease !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 999999 !important;
+}
+body.ava-redesign-active #ava-login-container h1 {
+  color: #fff !important;
+  font-size: 2.5rem !important;
+  font-weight: 700 !important;
+  margin-bottom: 8px !important;
+}
+body.ava-redesign-active #ava-login-container .ava-subtitle {
+  color: #9B4DCA !important;
+  font-size: 0.9rem !important;
+  margin-bottom: 32px !important;
+}
+body.ava-redesign-active .ava-google-btn {
+  background: #0f0f0f !important;
+  border: 1px solid #7B2FBE !important;
+  color: #9B4DCA !important;
+  padding: 12px 32px !important;
+  font-size: 0.85rem !important;
+  text-transform: uppercase !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+  display: inline-block !important;
+  letter-spacing: 1px !important;
+}
+body.ava-redesign-active .ava-google-btn:hover {
+  border-color: #B06AE8 !important;
+  color: #B06AE8 !important;
+}
+body.ava-redesign-active .ava-manual-link {
+  color: #555 !important;
+  font-size: 0.75rem !important;
+  margin-top: 16px !important;
+  cursor: pointer !important;
+}
+body.ava-redesign-active .ava-manual-link:hover {
+  color: #9B4DCA !important;
+}
+body.ava-redesign-active .ava-login-footer {
+  position: fixed !important;
+  bottom: 16px !important;
+  color: #333 !important;
+  font-size: 0.65rem !important;
+}
+
+@keyframes avaFadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* =============================================
+   MY COURSES PAGE (/my/courses.php)
+   ============================================= */
+/* Page header — show but styled */
+body.ava-redesign-active.page-mycourses #page-header {
+  display: block !important;
+  background: transparent !important;
+  padding: 72px 24px 8px !important;
+}
+
+/* Force all containers to be full width */
+body.ava-redesign-active.page-mycourses #page-content,
+body.ava-redesign-active.page-mycourses #region-main,
+body.ava-redesign-active.page-mycourses #region-main-box,
+body.ava-redesign-active.page-mycourses [data-region="myoverview"],
+body.ava-redesign-active.page-mycourses [data-region="courses-view"],
+body.ava-redesign-active.page-mycourses [data-region="course-view-content"],
+body.ava-redesign-active.page-mycourses .container-fluid {
+  overflow: visible !important;
+  height: auto !important;
+  max-height: none !important;
+  padding: 0 24px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* The card-grid — override inline height:13rem and flex-nowrap */
+body.ava-redesign-active.page-mycourses .card-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
+  gap: 16px !important;
+  padding: 16px 0 !important;
+  overflow: visible !important;
+  height: auto !important;
+  max-height: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  flex-wrap: unset !important;
+  align-items: unset !important;
+}
+
+/* Each col */
+body.ava-redesign-active.page-mycourses .card-grid .col,
+body.ava-redesign-active.page-mycourses .card-grid [class*="col-"] {
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  flex: unset !important;
+  padding: 0 !important;
+  height: auto !important;
+}
+
+/* Square card — text only, no images */
+body.ava-redesign-active.page-mycourses .card {
+  width: 100% !important;
+  height: 160px !important;
+  min-height: 160px !important;
+  max-height: 160px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  text-align: center !important;
+  padding: 12px !important;
+  background: #0f0f0f !important;
+  border: 1px solid #1f1f1f !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+body.ava-redesign-active.page-mycourses .card:hover {
+  border-color: #7B2FBE !important;
+}
+
+/* Hide all images */
+body.ava-redesign-active.page-mycourses .card-img-top,
+body.ava-redesign-active.page-mycourses .course-image,
+body.ava-redesign-active.page-mycourses .courseimage,
+body.ava-redesign-active.page-mycourses [data-region="course-content"] img,
+body.ava-redesign-active.page-mycourses .dashboard-card-img {
+  display: none !important;
+}
+
+/* Card body fills card */
+body.ava-redesign-active.page-mycourses .card .course-info-container,
+body.ava-redesign-active.page-mycourses .card .card-body {
+  padding: 4px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  flex: 1 !important;
+  background: transparent !important;
+}
+
+/* Course name */
+body.ava-redesign-active.page-mycourses .coursename,
+body.ava-redesign-active.page-mycourses .multiline a,
+body.ava-redesign-active.page-mycourses .course-info-container a {
+  color: #E0E0E0 !important;
+  font-size: 0.72rem !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+  text-align: center !important;
+  word-break: break-word !important;
+  overflow: hidden !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 5 !important;
+  -webkit-box-orient: vertical !important;
+}
+body.ava-redesign-active.page-mycourses .coursename:hover,
+body.ava-redesign-active.page-mycourses .multiline a:hover,
+body.ava-redesign-active.page-mycourses .course-info-container a:hover {
+  color: #9B4DCA !important;
+}
+
+/* Hide progress bars, categories, actions */
+body.ava-redesign-active.page-mycourses .course-category,
+body.ava-redesign-active.page-mycourses .progress,
+body.ava-redesign-active.page-mycourses .course-card-actions,
+body.ava-redesign-active.page-mycourses .courseimage {
+  display: none !important;
+}
+
+/* Hide loading placeholder */
+body.ava-redesign-active.page-mycourses [data-region="loading-placeholder-content"] {
+  display: none !important;
+}
+
+/* Paging */
+body.ava-redesign-active.page-mycourses [data-region="paging-bar"] .page-link {
+  background: #0f0f0f !important;
+  border-color: #2a2a2a !important;
+  color: #9B4DCA !important;
+}
+
+/* Filter/search controls on courses page */
+body.ava-redesign-active.page-mycourses [data-region="filter"] {
+  padding: 8px 0 !important;
+  background: transparent !important;
+}
+body.ava-redesign-active.page-mycourses .btn-outline-secondary {
+  background: #0f0f0f !important;
+  border-color: #2a2a2a !important;
+  color: #888 !important;
+}
+
+/* =============================================
+   LOADING PULSE
+   ============================================= */
+body.ava-redesign-active .bg-pulse-grey {
+  background: #1a1a1a !important;
+  animation: avaPulse 1.5s ease-in-out infinite !important;
+}
+@keyframes avaPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+/* =============================================
+   USER MENU
+   ============================================= */
+body.ava-redesign-active #user-action-menu {
+  background: #0f0f0f !important;
+  border: 1px solid #2a2a2a !important;
+}
+body.ava-redesign-active #user-action-menu .dropdown-item {
+  color: #E0E0E0 !important;
+}
+body.ava-redesign-active #user-action-menu .dropdown-item:hover {
+  background: #141414 !important;
+  color: #9B4DCA !important;
+}
+body.ava-redesign-active #user-action-menu .loggedinas {
+  color: #888 !important;
+}
+body.ava-redesign-active #user-action-menu .dropdown-divider {
+  border-color: #1f1f1f !important;
+}
+
+/* =============================================
+   SEARCH BAR
+   ============================================= */
+body.ava-redesign-active .searchform-navbar .form-control {
+  background: #0f0f0f !important;
+  border: 1px solid #2a2a2a !important;
+  color: #E0E0E0 !important;
+}

@@ -1,17 +1,19 @@
 /**
  * DashboardPage.tsx
  *
- * Supports two auth modes:
- *   1. TOKEN mode  — moodle_token in localStorage (manual login)
- *   2. SESSION mode — user came from Google OAuth; we detect the active
- *      Moodle session via the allorigins CORS proxy and call the REST API
- *      through it. Falls back gracefully if session check fails.
+ * Auth modes:
+ *   TOKEN  — moodle_token in localStorage (manual login)
+ *            Full Moodle REST API access via wstoken.
+ *            Shows full dashboard: Timeline + Agenda + Calendar + Courses.
+ *
+ *   SESSION — user logged in via Google OAuth on Moodle's real login page.
+ *             Browser has Moodle session cookies, but cross-origin CORS blocks
+ *             API calls. Shows embedded Moodle iframe + quick links.
  *
  * On mount:
- *   - If moodle_token present → use token mode
- *   - Else → check session via proxy (checkMoodleSession)
- *     - If session valid → use session mode
- *     - Else → redirect to /
+ *   - moodle_token present → TOKEN mode
+ *   - moodle_auth_mode === 'session' → SESSION mode
+ *   - else → redirect to /
  */
 
 import { useEffect, useState, useCallback } from 'react'
@@ -24,7 +26,6 @@ import {
   MoodleEvent,
   MoodleTimelineEvent,
 } from '../api/moodle'
-import { checkMoodleSession, moodleProxyRest } from '../api/proxy'
 import { useTheme } from '../hooks/useTheme'
 import Timeline from '../components/Timeline'
 import AgendaBlock from '../components/AgendaBlock'
@@ -33,14 +34,16 @@ import CourseList from '../components/CourseList'
 
 type AuthMode = 'token' | 'session' | 'checking'
 
+const MOODLE_BASE = 'https://ava.escolaparque.g12.br'
+
 export default function DashboardPage() {
   const navigate = useNavigate()
   const [theme, toggleTheme] = useTheme()
   const isDark = theme === 'dark'
 
   const [authMode, setAuthMode] = useState<AuthMode>('checking')
-  const [authError, setAuthError] = useState('')
 
+  // Token mode data
   const [courses, setCourses] = useState<MoodleCourse[]>([])
   const [events, setEvents] = useState<MoodleEvent[]>([])
   const [timeline, setTimeline] = useState<MoodleTimelineEvent[]>([])
@@ -53,133 +56,67 @@ export default function DashboardPage() {
   const [fullname, setFullname] = useState('')
   const [userid, setUserid] = useState(0)
 
+  // Session mode
+  const [iframeSection, setIframeSection] = useState<'timeline' | 'courses' | 'calendar'>('timeline')
+
+  // Theme colors
   const bgColor = isDark ? '#080808' : '#f0f0f0'
   const navBg = isDark ? '#0f0f0f' : '#fff'
   const navBorder = isDark ? '#1f1f1f' : '#e0e0e0'
   const textColor = isDark ? '#E0E0E0' : '#111'
   const mutedColor = isDark ? '#666' : '#888'
-  void (isDark ? '#0f0f0f' : '#fff') // cardBg used by child components via theme prop
+  const cardBg = isDark ? '#0f0f0f' : '#fff'
+  const cardBorder = isDark ? '#1f1f1f' : '#e0e0e0'
 
-  // ── Load data: token mode ────────────────────────────────────────────
-  const loadDataToken = useCallback(
-    async (token: string, uid: number) => {
-      setLoadingTimeline(true)
-      setLoadingEvents(true)
-      setLoadingCourses(true)
-
-      getTimelineEvents(token)
-        .then(data => setTimeline(data))
-        .catch(() => setTimeline([]))
-        .finally(() => setLoadingTimeline(false))
-
-      getUpcomingEvents(token)
-        .then(data => setEvents(data))
-        .catch(() => setEvents([]))
-        .finally(() => setLoadingEvents(false))
-
-      getUserCourses(token, uid)
-        .then(data => setCourses(data))
-        .catch(() => setCourses([]))
-        .finally(() => setLoadingCourses(false))
-    },
-    [],
-  )
-
-  // ── Load data: session mode (via proxy) ──────────────────────────────
-  const loadDataSession = useCallback(async (uid: number) => {
+  // ── Load data (token mode) ───────────────────────────────────────────
+  const loadDataToken = useCallback(async (token: string, uid: number) => {
     setLoadingTimeline(true)
     setLoadingEvents(true)
     setLoadingCourses(true)
 
-    const now = Math.floor(Date.now() / 1000)
-
-    // Timeline
-    moodleProxyRest<{ events: MoodleTimelineEvent[] }>(
-      'core_calendar_get_action_events_by_timesort',
-      {
-        timesortfrom: now,
-        timesortto: now + 90 * 24 * 3600,
-        limitnum: 20,
-      },
-    )
-      .then(r => setTimeline(Array.isArray(r.data?.events) ? r.data!.events : []))
+    getTimelineEvents(token)
+      .then(d => setTimeline(d))
       .catch(() => setTimeline([]))
       .finally(() => setLoadingTimeline(false))
 
-    // Events
-    moodleProxyRest<{ events: MoodleEvent[] }>(
-      'core_calendar_get_calendar_upcoming_view',
-    )
-      .then(r => setEvents(Array.isArray(r.data?.events) ? r.data!.events : []))
+    getUpcomingEvents(token)
+      .then(d => setEvents(d))
       .catch(() => setEvents([]))
       .finally(() => setLoadingEvents(false))
 
-    // Courses
-    moodleProxyRest<MoodleCourse[]>('core_enrol_get_users_courses', {
-      userid: uid,
-    })
-      .then(r => setCourses(Array.isArray(r.data) ? r.data : []))
+    getUserCourses(token, uid)
+      .then(d => setCourses(d))
       .catch(() => setCourses([]))
       .finally(() => setLoadingCourses(false))
   }, [])
 
-  // ── Mount: determine auth mode ────────────────────────────────────────
+  // ── Mount ────────────────────────────────────────────────────────────
   useEffect(() => {
     const token = localStorage.getItem('moodle_token')
 
     if (token) {
-      // Token mode
-      const uidStr = localStorage.getItem('moodle_userid')
-      const uid = uidStr ? parseInt(uidStr, 10) : 0
+      const uid = parseInt(localStorage.getItem('moodle_userid') || '0', 10)
       const name = localStorage.getItem('moodle_fullname') || ''
       setFullname(name)
       setUserid(uid)
       setAuthMode('token')
-      const t = setTimeout(() => setVisible(true), 60)
+      setTimeout(() => setVisible(true), 60)
       loadDataToken(token, uid)
-      return () => clearTimeout(t)
+      return
     }
 
-    // No token — check for active Moodle session (post-Google OAuth)
-    let cancelled = false
-    const t = setTimeout(() => {
-      if (!cancelled) setVisible(true)
-    }, 200)
-
-    checkMoodleSession()
-      .then(result => {
-        if (cancelled) return
-        if (result.loggedIn && result.userid) {
-          const name = result.fullname || ''
-          const uid = result.userid
-          setFullname(name)
-          setUserid(uid)
-          // Persist for future refreshes
-          localStorage.setItem('moodle_userid', String(uid))
-          localStorage.setItem('moodle_fullname', name)
-          localStorage.setItem('moodle_auth_mode', 'session')
-          setAuthMode('session')
-          setVisible(true)
-          loadDataSession(uid)
-        } else {
-          // No session, no token → redirect to login
-          if (!cancelled) navigate('/')
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setAuthError(
-            'Não foi possível verificar sua sessão. Faça login novamente.',
-          )
-          setTimeout(() => navigate('/'), 2500)
-        }
-      })
-
-    return () => {
-      cancelled = true
-      clearTimeout(t)
+    const storedMode = localStorage.getItem('moodle_auth_mode')
+    if (storedMode === 'session') {
+      setAuthMode('session')
+      setLoadingCourses(false)
+      setLoadingEvents(false)
+      setLoadingTimeline(false)
+      setTimeout(() => setVisible(true), 60)
+      return
     }
-  }, [navigate, loadDataToken, loadDataSession])
+
+    navigate('/')
+  }, [navigate, loadDataToken])
 
   const handleLogout = () => {
     localStorage.removeItem('moodle_token')
@@ -189,7 +126,7 @@ export default function DashboardPage() {
     navigate('/')
   }
 
-  // ── Auth checking screen ──────────────────────────────────────────────
+  // ── Checking screen ──────────────────────────────────────────────────
   if (authMode === 'checking') {
     return (
       <div
@@ -201,58 +138,31 @@ export default function DashboardPage() {
           justifyContent: 'center',
           flexDirection: 'column',
           gap: '16px',
+          fontFamily: "'JetBrains Mono', monospace",
         }}
       >
-        {authError ? (
-          <p
-            style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: '0.85rem',
-              color: '#ff4444',
-              textAlign: 'center',
-              padding: '0 24px',
-            }}
-          >
-            ✗ {authError}
-          </p>
-        ) : (
-          <>
+        <div style={{ fontSize: '0.85rem', color: '#9B4DCA' }}>
+          &gt; verificando sessão...
+        </div>
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {[0, 1, 2].map(i => (
             <div
+              key={i}
+              className="skeleton"
               style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: '0.85rem',
-                color: '#9B4DCA',
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                animationDelay: `${i * 0.2}s`,
               }}
-            >
-              &gt; verificando sessão...
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                gap: '6px',
-                alignItems: 'center',
-              }}
-            >
-              {[0, 1, 2].map(i => (
-                <div
-                  key={i}
-                  className="skeleton"
-                  style={{
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: '50%',
-                    animationDelay: `${i * 0.2}s`,
-                  }}
-                />
-              ))}
-            </div>
-          </>
-        )}
+            />
+          ))}
+        </div>
       </div>
     )
   }
 
-  // ── Shared button style ───────────────────────────────────────────────
+  // ── Shared nav button style ──────────────────────────────────────────
   const btnStyle: React.CSSProperties = {
     background: isDark ? '#0f0f0f' : '#f5f5f5',
     border: `1px solid ${isDark ? '#2a2a2a' : '#ddd'}`,
@@ -263,23 +173,30 @@ export default function DashboardPage() {
     borderRadius: '3px',
     cursor: 'pointer',
     transition: 'all 0.15s',
-    whiteSpace: 'nowrap',
+    whiteSpace: 'nowrap' as const,
+    textDecoration: 'none',
+    display: 'inline-flex',
+    alignItems: 'center',
   }
 
-  const handleBtnEnter = (e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
-    const el = e.currentTarget as HTMLElement
-    el.style.borderColor = '#7B2FBE'
-    el.style.color = '#9B4DCA'
+  const handleBtnEnter = (e: React.MouseEvent<HTMLElement>) => {
+    e.currentTarget.style.borderColor = '#7B2FBE'
+    e.currentTarget.style.color = '#9B4DCA'
   }
-  const handleBtnLeave = (e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
-    const el = e.currentTarget as HTMLElement
-    el.style.borderColor = isDark ? '#2a2a2a' : '#ddd'
-    el.style.color = mutedColor
+  const handleBtnLeave = (e: React.MouseEvent<HTMLElement>) => {
+    e.currentTarget.style.borderColor = isDark ? '#2a2a2a' : '#ddd'
+    e.currentTarget.style.color = mutedColor
+  }
+
+  // ── Iframe URLs for session mode ─────────────────────────────────────
+  const iframeUrls: Record<typeof iframeSection, string> = {
+    timeline: `${MOODLE_BASE}/my/`,
+    courses: `${MOODLE_BASE}/my/courses.php`,
+    calendar: `${MOODLE_BASE}/calendar/view.php?view=upcoming`,
   }
 
   return (
     <div
-      className="theme-transition"
       style={{
         minHeight: '100vh',
         background: bgColor,
@@ -300,11 +217,13 @@ export default function DashboardPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 20px',
+          padding: '0 16px',
           zIndex: 100,
           transition: 'background 0.2s, border-color 0.2s',
+          gap: '12px',
         }}
       >
+        {/* Brand */}
         <span
           style={{
             fontFamily: "'JetBrains Mono', monospace",
@@ -312,44 +231,46 @@ export default function DashboardPage() {
             fontSize: '0.82rem',
             color: '#9B4DCA',
             letterSpacing: '0.02em',
+            flexShrink: 0,
           }}
         >
           AVA — ESCOLA PARQUE
         </span>
 
+        {/* Nav actions */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            flexWrap: 'wrap',
+            flexWrap: 'wrap' as const,
           }}
         >
-          {/* Auth mode badge */}
+          {/* Auth badge */}
           <span
             style={{
               fontFamily: "'JetBrains Mono', monospace",
               fontSize: '0.62rem',
-              color: authMode === 'session' ? '#4CAF50' : '#666',
-              border: `1px solid ${authMode === 'session' ? '#1b4a1e' : '#1f1f1f'}`,
-              padding: '2px 6px',
+              color: authMode === 'token' ? '#4CAF50' : '#9B4DCA',
+              border: `1px solid ${authMode === 'token' ? '#1b4a1e' : '#3a1a5a'}`,
+              padding: '2px 7px',
               borderRadius: '2px',
-              background:
-                authMode === 'session' ? '#0a1a0b' : 'transparent',
+              background: authMode === 'token' ? '#0a1a0b' : '#1a0a2e',
+              flexShrink: 0,
             }}
             title={
-              authMode === 'session'
-                ? 'Logado via Google OAuth (sessão Moodle)'
-                : 'Logado via token de API'
+              authMode === 'token'
+                ? 'Logado via token de API (login manual)'
+                : 'Logado via Google OAuth (sessão Moodle)'
             }
           >
-            {authMode === 'session' ? '● oauth' : '● token'}
+            {authMode === 'token' ? '● token' : '● oauth'}
           </span>
 
           {/* Theme toggle */}
           <button
             onClick={toggleTheme}
-            style={btnStyle}
+            style={btnStyle as React.CSSProperties}
             onMouseEnter={handleBtnEnter}
             onMouseLeave={handleBtnLeave}
             title={isDark ? 'Modo claro' : 'Modo escuro'}
@@ -357,27 +278,22 @@ export default function DashboardPage() {
             {isDark ? '☀ LIGHT' : '☾ DARK'}
           </button>
 
-          {/* Logout */}
+          {/* Sair */}
           <button
             onClick={handleLogout}
-            style={btnStyle}
+            style={btnStyle as React.CSSProperties}
             onMouseEnter={handleBtnEnter}
             onMouseLeave={handleBtnLeave}
           >
             [ SAIR ]
           </button>
 
-          {/* Original site */}
+          {/* Site original */}
           <a
             href="https://ava.escolaparque.g12.br/my/"
             target="_blank"
             rel="noopener noreferrer"
-            style={{
-              ...btnStyle,
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-            }}
+            style={btnStyle as React.CSSProperties}
             onMouseEnter={handleBtnEnter}
             onMouseLeave={handleBtnLeave}
           >
@@ -386,7 +302,7 @@ export default function DashboardPage() {
         </div>
       </nav>
 
-      {/* ── Content ── */}
+      {/* ── Main content ── */}
       <main
         style={{
           maxWidth: '900px',
@@ -400,8 +316,8 @@ export default function DashboardPage() {
           transition: 'opacity 0.4s ease, transform 0.4s ease',
         }}
       >
-        {/* Greeting */}
-        {fullname && (
+        {/* Greeting (token mode) */}
+        {fullname && authMode === 'token' && (
           <div style={{ marginBottom: '24px' }}>
             <span
               style={{
@@ -422,120 +338,343 @@ export default function DashboardPage() {
             >
               {fullname}
             </span>
-            {authMode === 'session' && (
+            {userid > 0 && (
               <span
                 style={{
                   fontFamily: "'JetBrains Mono', monospace",
                   fontSize: '0.7rem',
-                  color: '#333',
+                  color: '#2a2a2a',
                   marginLeft: '8px',
                 }}
               >
-                · sessão Google ativa
+                #{userid}
               </span>
             )}
           </div>
         )}
 
-        {/* Session mode notice */}
+        {/* ══════════════════════════════════════════════════════════
+            SESSION MODE — Google OAuth
+            User is logged in on Moodle but we can't call the API.
+            Show embedded Moodle pages + quick action links.
+        ══════════════════════════════════════════════════════════ */}
         {authMode === 'session' && (
           <div
             className="fade-in-delay-1"
-            style={{
-              marginBottom: '16px',
-              padding: '10px 14px',
-              background: isDark ? '#0a0e0a' : '#f0fff0',
-              border: `1px solid ${isDark ? '#1b3a1e' : '#c8e6c9'}`,
-              borderRadius: '4px',
-              borderLeft: '3px solid #4CAF50',
-            }}
+            style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
           >
-            <p
+            {/* Status banner */}
+            <div
               style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: '0.72rem',
-                color: isDark ? '#4CAF50' : '#2e7d32',
-                margin: 0,
-                lineHeight: 1.5,
+                padding: '14px 16px',
+                background: isDark ? '#0e0a1a' : '#f5f0ff',
+                border: `1px solid ${isDark ? '#3a1a5a' : '#c4a0e8'}`,
+                borderLeft: '3px solid #7B2FBE',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                flexWrap: 'wrap' as const,
               }}
             >
-              ✓ Sessão Google detectada. Dados carregados via proxy de sessão.
-              <br />
-              <span style={{ color: isDark ? '#2d5a30' : '#81c784' }}>
-                Nota: alguns dados podem estar limitados dependendo das
-                permissões da API do servidor Moodle.
-              </span>
-            </p>
+              <div>
+                <p
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: '0.78rem',
+                    color: '#9B4DCA',
+                    margin: '0 0 4px 0',
+                    fontWeight: 700,
+                  }}
+                >
+                  ✓ sessão Google ativa no Moodle
+                </p>
+                <p
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: '0.68rem',
+                    color: mutedColor,
+                    margin: 0,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  Dados da API indisponíveis via OAuth (restrição CORS).
+                  Use o login manual para acesso completo ao dashboard.
+                </p>
+              </div>
+
+              {/* Switch to token login */}
+              <button
+                onClick={handleLogout}
+                style={{
+                  background: '#0f0f0f',
+                  border: '1px solid #7B2FBE',
+                  color: '#9B4DCA',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: '0.72rem',
+                  padding: '7px 12px',
+                  borderRadius: '3px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  whiteSpace: 'nowrap' as const,
+                  flexShrink: 0,
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = '#1a0a2e'
+                  e.currentTarget.style.color = '#c77dff'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = '#0f0f0f'
+                  e.currentTarget.style.color = '#9B4DCA'
+                }}
+              >
+                → login manual
+              </button>
+            </div>
+
+            {/* Section switcher */}
+            <div
+              style={{
+                display: 'flex',
+                gap: '4px',
+                borderBottom: `1px solid ${cardBorder}`,
+                paddingBottom: '0',
+              }}
+            >
+              {(
+                [
+                  { key: 'timeline', label: '// DASHBOARD' },
+                  { key: 'courses', label: '// CURSOS' },
+                  { key: 'calendar', label: '// AGENDA' },
+                ] as const
+              ).map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => setIframeSection(tab.key)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    borderBottom: `2px solid ${iframeSection === tab.key ? '#7B2FBE' : 'transparent'}`,
+                    color:
+                      iframeSection === tab.key ? '#9B4DCA' : mutedColor,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: '0.72rem',
+                    fontWeight: iframeSection === tab.key ? 700 : 400,
+                    padding: '8px 12px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                    marginBottom: '-1px',
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Moodle iframe */}
+            <div
+              style={{
+                background: cardBg,
+                border: `1px solid ${cardBorder}`,
+                borderRadius: '4px',
+                overflow: 'hidden',
+                position: 'relative',
+              }}
+            >
+              {/* Iframe label */}
+              <div
+                style={{
+                  padding: '6px 12px',
+                  background: isDark ? '#0a0a0a' : '#f9f9f9',
+                  borderBottom: `1px solid ${cardBorder}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: '0.62rem',
+                    color: '#333',
+                  }}
+                >
+                  ↳ ava.escolaparque.g12.br — sua sessão Google está ativa
+                </span>
+                <a
+                  href={iframeUrls[iframeSection]}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: '0.6rem',
+                    color: '#2a2a2a',
+                    textDecoration: 'none',
+                    transition: 'color 0.15s',
+                  }}
+                  onMouseEnter={e =>
+                    (e.currentTarget.style.color = '#9B4DCA')
+                  }
+                  onMouseLeave={e =>
+                    (e.currentTarget.style.color = '#2a2a2a')
+                  }
+                >
+                  ↗ abrir em nova aba
+                </a>
+              </div>
+
+              <iframe
+                key={iframeSection}
+                src={iframeUrls[iframeSection]}
+                title="Moodle AVA"
+                style={{
+                  width: '100%',
+                  height: '600px',
+                  border: 'none',
+                  display: 'block',
+                }}
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation"
+              />
+            </div>
+
+            {/* Quick links */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                gap: '8px',
+              }}
+            >
+              {[
+                { label: '→ meus cursos', url: `${MOODLE_BASE}/my/courses.php` },
+                { label: '→ agenda', url: `${MOODLE_BASE}/calendar/view.php` },
+                { label: '→ mensagens', url: `${MOODLE_BASE}/message/index.php` },
+                { label: '→ perfil', url: `${MOODLE_BASE}/user/profile.php` },
+              ].map(link => (
+                <a
+                  key={link.url}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'block',
+                    padding: '10px 12px',
+                    background: cardBg,
+                    border: `1px solid ${cardBorder}`,
+                    borderRadius: '3px',
+                    textDecoration: 'none',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: '0.72rem',
+                    color: mutedColor,
+                    transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.borderColor = '#7B2FBE'
+                    e.currentTarget.style.color = '#9B4DCA'
+                    e.currentTarget.style.borderLeft = '2px solid #7B2FBE'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.borderColor = cardBorder
+                    e.currentTarget.style.color = mutedColor
+                    e.currentTarget.style.borderLeft = `1px solid ${cardBorder}`
+                  }}
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+
+            {/* Technical note */}
+            <div
+              style={{
+                padding: '10px 14px',
+                background: isDark ? '#050505' : '#fafafa',
+                border: `1px solid ${cardBorder}`,
+                borderRadius: '3px',
+              }}
+            >
+              <p
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: '0.62rem',
+                  color: isDark ? '#1e1e1e' : '#ccc',
+                  margin: 0,
+                  lineHeight: 1.9,
+                }}
+              >
+                // modo: oauth · acesso à API indisponível (CORS + SameSite=Lax)
+                <br />
+                // para dashboard completo: use login manual (usuário + senha)
+                <br />
+                // ou peça ao admin para habilitar o serviço moodle_mobile_app
+              </p>
+            </div>
           </div>
         )}
 
-        {/* Grid layout */}
-        <div
-          className="dashboard-grid"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 60%) minmax(0, 40%)',
-            gap: '16px',
-            alignItems: 'start',
-          }}
-        >
-          {/* Left column */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div className="fade-in-delay-1">
-              <Timeline
-                events={timeline}
-                loading={loadingTimeline}
-                theme={theme}
-              />
-            </div>
-            <div className="fade-in-delay-2">
-              <AgendaBlock
-                events={events}
-                loading={loadingEvents}
-                theme={theme}
-              />
-            </div>
-          </div>
-
-          {/* Right column */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div className="fade-in-delay-3">
-              <CalendarMini events={events} theme={theme} />
-            </div>
-            <div className="fade-in-delay-4">
-              <CourseList
-                courses={courses}
-                loading={loadingCourses}
-                theme={theme}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Debug info (dev only) */}
-        {(import.meta as unknown as { env: { DEV: boolean } }).env.DEV && (
-          <div
-            style={{
-              marginTop: '32px',
-              padding: '12px',
-              background: '#0a0a0a',
-              border: '1px solid #1a1a1a',
-              borderRadius: '4px',
-            }}
-          >
-            <p
+        {/* ══════════════════════════════════════════════════════════
+            TOKEN MODE — Full dashboard
+        ══════════════════════════════════════════════════════════ */}
+        {authMode === 'token' && (
+          <>
+            <div
+              className="dashboard-grid"
               style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: '0.68rem',
-                color: '#333',
-                margin: 0,
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 60%) minmax(0, 40%)',
+                gap: '16px',
+                alignItems: 'start',
               }}
             >
-              // dev · mode: {authMode} · userid: {userid} · fullname:{' '}
-              {fullname || '—'} · courses: {courses.length} · events:{' '}
-              {events.length} · timeline: {timeline.length}
-            </p>
-          </div>
+              {/* Left: Timeline + Agenda */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="fade-in-delay-1">
+                  <Timeline events={timeline} loading={loadingTimeline} theme={theme} />
+                </div>
+                <div className="fade-in-delay-2">
+                  <AgendaBlock events={events} loading={loadingEvents} theme={theme} />
+                </div>
+              </div>
+
+              {/* Right: Calendar + Courses */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="fade-in-delay-3">
+                  <CalendarMini events={events} theme={theme} />
+                </div>
+                <div className="fade-in-delay-4">
+                  <CourseList courses={courses} loading={loadingCourses} theme={theme} />
+                </div>
+              </div>
+            </div>
+
+            {/* Dev debug info */}
+            {(import.meta as unknown as { env: { DEV: boolean } }).env.DEV && (
+              <div
+                style={{
+                  marginTop: '32px',
+                  padding: '12px',
+                  background: isDark ? '#0a0a0a' : '#f5f5f5',
+                  border: `1px solid ${isDark ? '#1a1a1a' : '#e0e0e0'}`,
+                  borderRadius: '4px',
+                }}
+              >
+                <p
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: '0.65rem',
+                    color: isDark ? '#222' : '#bbb',
+                    margin: 0,
+                    lineHeight: 1.8,
+                  }}
+                >
+                  // dev · mode: {authMode} · userid: {userid} · fullname:{' '}
+                  {fullname || '—'} · courses: {courses.length} · events:{' '}
+                  {events.length} · timeline: {timeline.length}
+                </p>
+              </div>
+            )}
+          </>
         )}
 
         {/* Footer */}
@@ -544,8 +683,8 @@ export default function DashboardPage() {
             marginTop: '40px',
             textAlign: 'center',
             fontFamily: "'JetBrains Mono', monospace",
-            fontSize: '0.68rem',
-            color: isDark ? '#1e1e1e' : '#ccc',
+            fontSize: '0.65rem',
+            color: isDark ? '#111' : '#ccc',
             transition: 'color 0.2s',
           }}
         >
@@ -559,6 +698,14 @@ export default function DashboardPage() {
             grid-template-columns: 1fr !important;
           }
         }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in-delay-1 { animation: fadeIn 0.35s ease 0.05s both; }
+        .fade-in-delay-2 { animation: fadeIn 0.35s ease 0.12s both; }
+        .fade-in-delay-3 { animation: fadeIn 0.35s ease 0.18s both; }
+        .fade-in-delay-4 { animation: fadeIn 0.35s ease 0.25s both; }
       `}</style>
     </div>
   )

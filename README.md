@@ -1,204 +1,189 @@
-# AVA — Escola Parque
+# AVA — ESCOLA PARQUE
 
-Redesign não oficial do dashboard Moodle de [ava.escolaparque.g12.br](https://ava.escolaparque.g12.br/my/).
-
-Built with **React + Vite + TypeScript + Tailwind CSS**.  
-Fonte: JetBrains Mono.
+Redesign do dashboard Moodle de [ava.escolaparque.g12.br](https://ava.escolaparque.g12.br).
+Interface terminal-style, dark/light mode, fonte JetBrains Mono.
 
 ---
 
-## Como rodar localmente
+## STACK
 
-### Pré-requisitos
-- Node.js ≥ 18
-- npm ≥ 9
-
-### Instalação
-
-```bash
-git clone <repo-url>
-cd ava-redesign
-npm install
-```
-
-### Desenvolvimento
-
-```bash
-npm run dev
-```
-
-Acesse em: `http://localhost:5173`
-
-### Build de produção
-
-```bash
-npm run build
-npm run preview
-```
+- **React 18** + **Vite** (SPA)
+- **Tailwind CSS** + estilos inline
+- **TypeScript** estrito
+- **React Router v6**
+- Fonte: **JetBrains Mono** (Google Fonts)
 
 ---
 
 ## AUTENTICAÇÃO
 
-O sistema suporta dois fluxos de autenticação, com prioridade para o login Google:
+### Por que o sesskey scraping NÃO funciona
+
+O fluxo Google OAuth do Moodle usa um **sesskey CSRF** dinâmico na URL:
+
+```
+https://ava.escolaparque.g12.br/auth/oauth2/login.php?id=1&wantsurl=...&sesskey=XXXXXXX
+```
+
+Tentativa anterior (quebrada):
+1. CORS proxy busca `login/index.php` → Moodle cria uma sessão **para o proxy**
+2. Moodle embute o sesskey válido **para essa sessão do proxy**
+3. O browser do usuário usa esse sesskey → Moodle rejeita:
+   **`error/moodle/invalidsesskey`**
+   - O sesskey pertence à sessão do proxy, não à sessão do browser do usuário
+   - São sessões HTTP completamente distintas
+
+### Fluxo correto implementado
+
+#### Fluxo 1 — Google OAuth (principal)
+
+```
+LoginPage
+  └─ Clique em [ ENTRAR COM GOOGLE ]
+       └─ window.location.href = 'https://ava.escolaparque.g12.br/login/index.php'
+            └─ Browser carrega a página real do Moodle
+                 └─ Moodle gera sesskey válido PARA O BROWSER DO USUÁRIO
+                      └─ Usuário clica em Google → OAuth → Moodle logado
+                           └─ Usuário volta ao AVA redesign
+                                └─ Clica em [ JÁ FIZ LOGIN → DASHBOARD ]
+                                     └─ Dashboard mostra o status OAuth
+```
+
+**Limitação**: cookies de sessão do Moodle são `SameSite=Lax` — o browser
+não os envia em requisições cross-origin, então a API REST não pode ser
+chamada via proxy com sessão. O dashboard no modo OAuth oferece:
+- Link direto para o Moodle completo (com a sessão ativa)
+- Botão para fazer login manual (token) para acesso à API
+
+#### Fluxo 2 — Login Manual / Token (funcionamento completo)
+
+```
+LoginPage → login manual ↓
+  └─ username + password
+       └─ POST https://ava.escolaparque.g12.br/login/token.php
+            ?username=X&password=Y&service=moodle_mobile_app
+              └─ { token: "..." } → localStorage
+                   └─ Dashboard carrega todos os dados via API token
+```
+
+**Requer**: serviço `moodle_mobile_app` habilitado no servidor Moodle.
+Se desabilitado, o servidor retorna erro — o app exibe mensagem clara.
+
+#### Por que a sessão cross-origin não funciona
+
+```
+Browser → Nosso app (localhost:5173 ou vercel.app)
+            └─ fetch('ava.escolaparque.g12.br/webservice/...', { credentials: 'include' })
+                 └─ Bloqueado pelo browser: CORS + SameSite=Lax cookies
+                      → Moodle retorna: "requireloginerror"
+```
+
+Mesmo usando CORS proxy server-side:
+```
+Browser → Proxy (allorigins.win) → Moodle
+                                     └─ Proxy tem sessão própria, não a do usuário
+                                          → Requisição não autenticada
+```
+
+**Solução definitiva**: Habilitar `moodle_mobile_app` no painel admin do Moodle
+e usar o login manual com token.
 
 ---
 
-### Fluxo 1 — Login com Google (OAuth2 via Moodle) ⭐ Recomendado
+## RODAR LOCALMENTE
 
-```
-Usuário → [ENTRAR COM GOOGLE] → Moodle OAuth → Google → Moodle → /dashboard
-```
+```bash
+# Instalar dependências
+npm install
 
-#### Como funciona:
+# Iniciar dev server
+npm run dev
 
-**Passo 1 — Buscar URL dinâmica do Google**
+# Build para produção
+npm run build
 
-Na página de login (`/`), ao montar o componente, fazemos:
-
-```
-GET allorigins.win/get?url=https://ava.escolaparque.g12.br/login/index.php
-```
-
-O `allorigins.win` é um proxy CORS público que retorna o HTML da página de login do Moodle.  
-Parseamos o HTML com regex e extraímos o `href` do botão de login Google:
-
-```
-https://ava.escolaparque.g12.br/auth/oauth2/login.php?id=1&wantsurl=...&sesskey=ABC123
+# Preview do build
+npm run preview
 ```
 
-> ⚠️ O `sesskey` muda a cada visita — por isso precisamos buscá-lo dinamicamente.
-
-**Passo 2 — Redirecionar para o Google**
-
-Ao clicar em `[ ENTRAR COM GOOGLE ]`:
-
-```js
-window.location.href = googleUrl
-```
-
-O fluxo OAuth completo ocorre:
-1. Moodle recebe a requisição e valida o `sesskey`
-2. Redireciona para o Google OAuth2
-3. Usuário autentica com conta Google institucional
-4. Google retorna para Moodle com o token
-5. Moodle cria sessão (cookie `MoodleSession`) e redireciona para `wantsurl`
-
-**Passo 3 — Detecção da sessão pós-OAuth**
-
-O dashboard (`/dashboard`) detecta a sessão automaticamente:
-
-```
-GET allorigins.win/get?url=https://ava.escolaparque.g12.br/webservice/rest/server.php
-     ?wsfunction=core_webservice_get_site_info&moodlewsrestformat=json
-```
-
-Se retornar `userid > 0`, o usuário está autenticado via sessão Moodle.  
-Salva `userid` e `fullname` no `localStorage` para persistência.
-
-**Passo 4 — Dados via proxy de sessão**
-
-Todas as chamadas à API Moodle são feitas via `allorigins.win` como proxy:
-
-```
-GET allorigins.win/get?url=https://ava.escolaparque.g12.br/webservice/rest/server.php
-     ?wsfunction=<FUNCTION>&moodlewsrestformat=json&<PARAMS>
-```
-
-> ⚠️ Nota: o `allorigins.win` não transmite cookies de sessão do browser.  
-> Portanto, chamadas de sessão ao servidor Moodle funcionam apenas se o servidor
-> não exigir autenticação por cookie para o endpoint `/webservice/rest/server.php`.
-> Se o servidor rejeitar, os dados aparecerão vazios (comportamento esperado).
+Acesse: `http://localhost:5173`
 
 ---
 
-### Fluxo 2 — Login Manual (token de API)
-
-```
-Usuário preenche usuário/senha → POST /login/token.php → token salvo → /dashboard
-```
-
-#### Como funciona:
-
-1. Usuário clica em **login manual ↓** na página de login
-2. Preenche `username` e `password`
-3. Fazemos `POST` direto para:
-   ```
-   https://ava.escolaparque.g12.br/login/token.php
-   ?username=X&password=Y&service=moodle_mobile_app
-   ```
-4. Se retornar `{ token }`: salva em `localStorage.moodle_token`
-5. Dashboard usa o token em todas as chamadas REST
-
-> ⚠️ Requer que o serviço `moodle_mobile_app` esteja habilitado no servidor.  
-> Se a API REST não estiver habilitada, retorna erro: _"API REST não habilitada no servidor"_.
-
----
-
-### Comparação dos modos
-
-| | Google OAuth | Manual (Token) |
-|---|---|---|
-| Requer config. servidor | Apenas OAuth2 habilitado | API REST + `moodle_mobile_app` |
-| UX | Melhor (SSO institucional) | Requer senha separada |
-| Dados disponíveis | Via proxy (pode ser limitado) | Via token (completo) |
-| Persistência | `sessionStorage` / detecção | `localStorage.moodle_token` |
-
----
-
-### Arquitetura de arquivos
+## ESTRUTURA
 
 ```
 src/
 ├── api/
-│   ├── moodle.ts      ← Token-based REST client + login
-│   └── proxy.ts       ← CORS proxy (allorigins) para scraping e session
-├── pages/
-│   ├── LoginPage.tsx  ← Login Google + manual fallback
-│   └── DashboardPage.tsx ← Dashboard com detecção de auth mode
+│   ├── moodle.ts       ← Cliente REST Moodle (token mode)
+│   └── proxy.ts        ← Helpers proxy/sessão (best-effort)
 ├── components/
-│   ├── Timeline.tsx
-│   ├── AgendaBlock.tsx
-│   ├── CalendarMini.tsx
-│   └── CourseList.tsx
+│   ├── Timeline.tsx     ← Linha do tempo de atividades
+│   ├── AgendaBlock.tsx  ← Próximos eventos
+│   ├── CalendarMini.tsx ← Calendário compacto
+│   └── CourseList.tsx   ← Lista de cursos
 ├── hooks/
-│   └── useTheme.ts
-└── App.tsx
+│   └── useTheme.ts      ← Dark/light mode + localStorage
+├── pages/
+│   ├── LoginPage.tsx    ← Auth: Google redirect + manual
+│   └── DashboardPage.tsx ← Dashboard principal
+├── App.tsx              ← Router
+├── main.tsx
+└── index.css            ← Estilos globais + animações
 ```
 
 ---
 
-## Deploy na Vercel
+## DEPLOY
 
-1. Faça push do projeto para o GitHub
-2. Acesse [vercel.com](https://vercel.com) → **New Project** → importe o repositório
-3. Framework preset: **Vite**
-4. Build command: `npm run build`
-5. Output directory: `dist`
-6. Clique em **Deploy** ✓
+### Vercel (recomendado)
 
-> O deploy é 100% estático — sem custo no plano gratuito da Vercel.
+```bash
+npm install -g vercel
+vercel --prod
+```
 
----
+### Netlify
 
-## Limitações conhecidas
+```bash
+npm run build
+# Upload da pasta dist/
+```
 
-- **CORS**: chamadas diretas ao Moodle são bloqueadas pelo browser. Usamos `allorigins.win` como proxy público — pode ter latência ou limitações de rate.
-- **Sessão via proxy**: o `allorigins.win` não transmite cookies do browser, então dados de sessão pós-OAuth podem aparecer vazios se o servidor Moodle exigir autenticação via cookie.
-- **Token API**: o serviço `moodle_mobile_app` pode estar desabilitado no servidor Moodle da Escola Parque, tornando o login manual indisponível.
-- **sesskey dinâmico**: o `sesskey` do Google OAuth expira com a sessão PHP do Moodle. Se o usuário esperar muito na tela de login, o link pode expirar — basta recarregar a página.
-
----
-
-## Tecnologias
-
-- [React 19](https://react.dev)
-- [Vite 7](https://vitejs.dev)
-- [TypeScript 5](https://typescriptlang.org)
-- [Tailwind CSS 4](https://tailwindcss.com)
-- [React Router 7](https://reactrouter.com)
-- [allorigins.win](https://allorigins.win) — CORS proxy público
+Adicionar `_redirects` em `public/`:
+```
+/* /index.html 200
+```
 
 ---
 
-*Projeto não oficial. Desenvolvido para fins educacionais.*
+## FUNCIONALIDADES
+
+| Feature | Status | Modo |
+|---|---|---|
+| Login manual (token) | ✅ Funcional | Token |
+| Redirect Google OAuth | ✅ Funcional | OAuth |
+| Timeline de atividades | ✅ Funcional | Token |
+| Próximos eventos | ✅ Funcional | Token |
+| Calendário mini | ✅ Funcional | Token |
+| Lista de cursos | ✅ Funcional | Token |
+| Dark / Light mode | ✅ Funcional | Ambos |
+| Dashboard OAuth completo | ⚠ Limitado por CORS | OAuth |
+
+---
+
+## DESIGN
+
+- Fundo dark: `#080808` · cards: `#0f0f0f`
+- Roxo primário: `#7B2FBE` · roxo claro: `#9B4DCA`
+- Fundo light: `#f0f0f0` · cards: `#fff`
+- Fonte: JetBrains Mono (monospace)
+- Animações: fade-in + translateY, 0.4s
+- Skeletons roxos pulsantes em carregamento
+- Scrollbar customizada roxa
+
+---
+
+## NOTA
+
+Este é um **redesign não-oficial** sem afiliação com a Escola Parque.

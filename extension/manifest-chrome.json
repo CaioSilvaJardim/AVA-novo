@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "AVA — Escola Parque",
+  "version": "2.0.0",
+  "description": "Redesign minimalista do AVA Escola Parque — interface dark/light com tipografia mono",
+  "permissions": ["activeTab", "storage"],
+  "host_permissions": [
+    "*://ava.escolaparque.g12.br/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://ava.escolaparque.g12.br/*"],
+      "js": ["content.js"],
+      "css": ["style.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "AVA — Escola Parque"
+  }
+}
