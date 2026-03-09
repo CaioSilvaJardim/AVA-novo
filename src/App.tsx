@@ -90,58 +90,17 @@ const CONTENT_JS = `/* =============================================
     var brandText = document.querySelector('.ava-brand-text');
     if (brandText) brandText.remove();
     
-    // Remove estilos inline adicionados pela extensão
-    document.querySelectorAll('[data-ava-styled]').forEach(function(el) {
-      delete el.dataset.avaStyled;
-    });
-    
-    // Limpa TODOS os estilos inline que contenham propriedades da extensão
-    document.querySelectorAll('*[style*="ava"], *[style*="#080808"], *[style*="#0f0f0f"], *[style*="#7B2FBE"]').forEach(function(el) {
+    // Remove TODOS os estilos inline de TODOS os elementos
+    document.querySelectorAll('*[style]').forEach(function(el) {
       el.removeAttribute('style');
     });
     
     // Restaura classes originais do Bootstrap em grids de cursos
     document.querySelectorAll('.card-grid').forEach(function(el) {
-      el.removeAttribute('style');
       el.classList.add('flex-nowrap', 'overflow-hidden', 'row', 'row-cols-1', 'row-cols-sm-2', 'row-cols-md-3', 'mx-0');
     });
     
-    // Restaura calendário completamente
-    document.querySelectorAll('.calendarmonth, .maincalendar, .card-body[data-block="calendar_month"]').forEach(function(el) {
-      el.removeAttribute('style');
-    });
-    
-    // Restaura regiões de visualização de cursos
-    document.querySelectorAll('[data-region="course-view-content"], [data-region="courses-view"], [data-region="myoverview"]').forEach(function(el) {
-      el.removeAttribute('style');
-    });
-    
-    // Restaura page-header
-    document.querySelectorAll('#page-header').forEach(function(el) {
-      el.removeAttribute('style');
-    });
-    
-    // Restaura containers principais
-    document.querySelectorAll('#page, #page-wrapper, #page-content, #region-main, #region-main-box, #topofscroll, .main-inner, .container-fluid').forEach(function(el) {
-      el.removeAttribute('style');
-    });
-    
-    // Restaura cards e blocos
-    document.querySelectorAll('.card, .card-body, .card-header, .block, section.card, [data-block]').forEach(function(el) {
-      el.removeAttribute('style');
-    });
-    
-    // Restaura navbar
-    document.querySelectorAll('.navbar, .navbar.fixed-top').forEach(function(el) {
-      el.removeAttribute('style');
-    });
-    
-    // Restaura elementos escondidos
-    document.querySelectorAll('#inst552596, #inst492307, #theme_boost-drawers-blocks, .drawer-right-toggle, .drawer-toggler, .learningtools-action-info, .floating-button, #page-footer, #footnote, .footer-popover, .drawer-toggles').forEach(function(el) {
-      el.style.removeProperty('display');
-    });
-    
-    // Recarrega a página para garantir limpeza total
+    // Recarrega a página para garantir limpeza total de CSS e JS
     api.storage.local.set({ extensionActive: false });
     location.reload();
   }
@@ -357,7 +316,7 @@ const CONTENT_JS = `/* =============================================
     if (pageHeader) {
       var h1 = pageHeader.querySelector('h1, h2');
       if (h1) { h1.className = 'ava-block-title'; h1.textContent = '// MEUS CURSOS'; }
-      pageHeader.style.cssText = 'padding:72px 24px 8px!important;display:block!important;background:transparent!important;';
+      pageHeader.style.cssText = 'padding:80px 32px 16px!important;display:block!important;background:transparent!important;';
     }
     fixCourseGrid();
   }
@@ -371,8 +330,8 @@ const CONTENT_JS = `/* =============================================
       if (el.closest('[data-region="loading-placeholder-content"]')) return;
       el.setAttribute('style',
         'display:grid!important;' +
-        'grid-template-columns:repeat(auto-fill,minmax(160px,1fr))!important;' +
-        'gap:16px!important;padding:0!important;overflow:visible!important;' +
+        'grid-template-columns:repeat(auto-fill,minmax(200px,1fr))!important;' +
+        'gap:20px!important;padding:0!important;overflow:visible!important;' +
         'height:auto!important;max-height:none!important;width:100%!important;margin:0!important;'
       );
       el.classList.remove('flex-nowrap','overflow-hidden','row','row-cols-1','row-cols-sm-2','row-cols-md-3','mx-0');
@@ -581,15 +540,15 @@ body.ava-redesign-active section[data-block="calendar_upcoming"] .event h6 a { c
 body.ava-redesign-active section[data-block="calendar_upcoming"] .date { color: #666 !important; font-size: 0.7rem !important; }
 body.ava-redesign-active section[data-block="calendar_month"] { overflow: visible !important; }
 body.ava-redesign-active section[data-block="calendar_month"] .maincalendar { 
-  transform: scale(1) !important; 
+  transform: scale(0.92) !important; 
   transform-origin: top center !important; 
   overflow: visible !important; 
-  margin-top: 0 !important; 
+  margin-top: -10px !important; 
 }
 body.ava-redesign-active section[data-block="calendar_month"] .card-body { 
-  height: 450px !important; 
+  height: 520px !important; 
   overflow: visible !important; 
-  padding: 16px !important; 
+  padding: 20px 16px !important; 
 }
 body.ava-redesign-active section[data-block="calendar_month"] .footer,
 body.ava-redesign-active section[data-block="calendar_month"] .header { display: none !important; }
@@ -597,21 +556,21 @@ body.ava-redesign-active .calendar-controls {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  padding: 12px 8px !important;
-  margin-bottom: 12px !important;
+  padding: 14px 10px !important;
+  margin-bottom: 16px !important;
 }
 body.ava-redesign-active .calendar-controls h4.current { 
-  font-size: 1rem !important; 
+  font-size: 1.05rem !important; 
   color: #E0E0E0 !important; 
   margin: 0 !important; 
   font-weight: 700 !important;
   text-transform: uppercase !important;
-  letter-spacing: 1px !important;
+  letter-spacing: 1.2px !important;
 }
 body.ava-redesign-active .calendar-controls .arrow_link { 
-  font-size: 0.9rem !important; 
+  font-size: 0.85rem !important; 
   color: #9B4DCA !important; 
-  padding: 8px 14px !important; 
+  padding: 10px 16px !important; 
   border: 1px solid #2a2a2a !important;
   background: #0f0f0f !important;
   text-transform: uppercase !important;
@@ -628,24 +587,24 @@ body.ava-redesign-active .calendarmonth {
   border-collapse: collapse !important; 
 }
 body.ava-redesign-active .calendarmonth thead th {
-  font-size: 0.7rem !important;
+  font-size: 0.72rem !important;
   color: #555 !important;
   text-align: center !important;
-  padding: 12px 0 !important;
+  padding: 14px 0 !important;
   border: none !important;
   background: transparent !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
-  letter-spacing: 1px !important;
+  letter-spacing: 1.2px !important;
 }
 body.ava-redesign-active .calendarmonth td {
   text-align: center !important;
   vertical-align: middle !important;
-  padding: 8px 0 !important;
-  height: 55px !important;
-  max-height: 55px !important;
+  padding: 10px 0 !important;
+  height: 62px !important;
+  max-height: 62px !important;
   min-width: 0 !important;
-  font-size: 0.9rem !important;
+  font-size: 0.95rem !important;
   color: #888 !important;
   border: none !important;
   background: transparent !important;
@@ -657,15 +616,15 @@ body.ava-redesign-active .calendarmonth .day-number-circle {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 38px !important;
-  height: 38px !important;
+  width: 42px !important;
+  height: 42px !important;
   padding: 0 !important;
   margin: 0 auto !important;
   line-height: 1 !important;
   border-radius: 0 !important;
 }
 body.ava-redesign-active .calendarmonth .day-number {
-  font-size: 0.9rem !important;
+  font-size: 0.95rem !important;
   line-height: 1.2 !important;
   display: block !important;
   width: 100% !important;
