@@ -78,7 +78,9 @@ const CONTENT_JS = `/* =============================================
   }
 
   function deactivate() {
-    document.body.classList.remove('ava-redesign-active', 'ava-dark', 'page-mycourses');
+    document.body.classList.remove('ava-redesign-active', 'ava-dark', 'page-mycourses', 'page-login-index');
+    
+    // Remove todos os elementos injetados
     var container = document.getElementById('ava-float-btns');
     if (container) container.remove();
     var grid = document.getElementById('ava-dashboard-grid');
@@ -87,22 +89,59 @@ const CONTENT_JS = `/* =============================================
     if (loginContainer) loginContainer.remove();
     var brandText = document.querySelector('.ava-brand-text');
     if (brandText) brandText.remove();
+    
+    // Remove estilos inline adicionados pela extensão
     document.querySelectorAll('[data-ava-styled]').forEach(function(el) {
       delete el.dataset.avaStyled;
     });
-    document.querySelectorAll('*[style*="ava"]').forEach(function(el) {
+    
+    // Limpa TODOS os estilos inline que contenham propriedades da extensão
+    document.querySelectorAll('*[style*="ava"], *[style*="#080808"], *[style*="#0f0f0f"], *[style*="#7B2FBE"]').forEach(function(el) {
       el.removeAttribute('style');
     });
+    
+    // Restaura classes originais do Bootstrap em grids de cursos
     document.querySelectorAll('.card-grid').forEach(function(el) {
       el.removeAttribute('style');
       el.classList.add('flex-nowrap', 'overflow-hidden', 'row', 'row-cols-1', 'row-cols-sm-2', 'row-cols-md-3', 'mx-0');
     });
+    
+    // Restaura calendário completamente
     document.querySelectorAll('.calendarmonth, .maincalendar, .card-body[data-block="calendar_month"]').forEach(function(el) {
       el.removeAttribute('style');
     });
-    document.querySelectorAll('[data-region="course-view-content"], [data-region="courses-view"]').forEach(function(el) {
+    
+    // Restaura regiões de visualização de cursos
+    document.querySelectorAll('[data-region="course-view-content"], [data-region="courses-view"], [data-region="myoverview"]').forEach(function(el) {
       el.removeAttribute('style');
     });
+    
+    // Restaura page-header
+    document.querySelectorAll('#page-header').forEach(function(el) {
+      el.removeAttribute('style');
+    });
+    
+    // Restaura containers principais
+    document.querySelectorAll('#page, #page-wrapper, #page-content, #region-main, #region-main-box, #topofscroll, .main-inner, .container-fluid').forEach(function(el) {
+      el.removeAttribute('style');
+    });
+    
+    // Restaura cards e blocos
+    document.querySelectorAll('.card, .card-body, .card-header, .block, section.card, [data-block]').forEach(function(el) {
+      el.removeAttribute('style');
+    });
+    
+    // Restaura navbar
+    document.querySelectorAll('.navbar, .navbar.fixed-top').forEach(function(el) {
+      el.removeAttribute('style');
+    });
+    
+    // Restaura elementos escondidos
+    document.querySelectorAll('#inst552596, #inst492307, #theme_boost-drawers-blocks, .drawer-right-toggle, .drawer-toggler, .learningtools-action-info, .floating-button, #page-footer, #footnote, .footer-popover, .drawer-toggles').forEach(function(el) {
+      el.style.removeProperty('display');
+    });
+    
+    // Recarrega a página para garantir limpeza total
     api.storage.local.set({ extensionActive: false });
     location.reload();
   }
@@ -541,38 +580,72 @@ body.ava-redesign-active section[data-block="calendar_upcoming"] .event:hover { 
 body.ava-redesign-active section[data-block="calendar_upcoming"] .event h6 a { color: #E0E0E0 !important; font-size: 0.8rem !important; }
 body.ava-redesign-active section[data-block="calendar_upcoming"] .date { color: #666 !important; font-size: 0.7rem !important; }
 body.ava-redesign-active section[data-block="calendar_month"] { overflow: visible !important; }
-body.ava-redesign-active section[data-block="calendar_month"] .maincalendar { transform: scale(0.95) !important; transform-origin: top center !important; overflow: visible !important; margin-top: -10px !important; }
-body.ava-redesign-active section[data-block="calendar_month"] .card-body { height: 380px !important; overflow: visible !important; padding: 12px !important; }
+body.ava-redesign-active section[data-block="calendar_month"] .maincalendar { 
+  transform: scale(1) !important; 
+  transform-origin: top center !important; 
+  overflow: visible !important; 
+  margin-top: 0 !important; 
+}
+body.ava-redesign-active section[data-block="calendar_month"] .card-body { 
+  height: 450px !important; 
+  overflow: visible !important; 
+  padding: 16px !important; 
+}
 body.ava-redesign-active section[data-block="calendar_month"] .footer,
 body.ava-redesign-active section[data-block="calendar_month"] .header { display: none !important; }
 body.ava-redesign-active .calendar-controls {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  padding: 8px 6px !important;
-  margin-bottom: 8px !important;
+  padding: 12px 8px !important;
+  margin-bottom: 12px !important;
 }
-body.ava-redesign-active .calendar-controls h4.current { font-size: 0.9rem !important; color: #E0E0E0 !important; margin: 0 !important; }
-body.ava-redesign-active .calendar-controls .arrow_link { font-size: 0.85rem !important; color: #9B4DCA !important; padding: 6px 10px !important; }
+body.ava-redesign-active .calendar-controls h4.current { 
+  font-size: 1rem !important; 
+  color: #E0E0E0 !important; 
+  margin: 0 !important; 
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+}
+body.ava-redesign-active .calendar-controls .arrow_link { 
+  font-size: 0.9rem !important; 
+  color: #9B4DCA !important; 
+  padding: 8px 14px !important; 
+  border: 1px solid #2a2a2a !important;
+  background: #0f0f0f !important;
+  text-transform: uppercase !important;
+  font-weight: 500 !important;
+}
+body.ava-redesign-active .calendar-controls .arrow_link:hover { 
+  border-color: #7B2FBE !important; 
+  color: #B06AE8 !important; 
+}
 body.ava-redesign-active .calendar-controls .arrow_text { display: none !important; }
-body.ava-redesign-active .calendarmonth { width: 100% !important; table-layout: fixed !important; border-collapse: collapse !important; }
+body.ava-redesign-active .calendarmonth { 
+  width: 100% !important; 
+  table-layout: fixed !important; 
+  border-collapse: collapse !important; 
+}
 body.ava-redesign-active .calendarmonth thead th {
-  font-size: 0.75rem !important;
+  font-size: 0.7rem !important;
   color: #555 !important;
   text-align: center !important;
-  padding: 8px 0 !important;
+  padding: 12px 0 !important;
   border: none !important;
   background: transparent !important;
-  font-weight: 400 !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
 }
 body.ava-redesign-active .calendarmonth td {
   text-align: center !important;
   vertical-align: middle !important;
-  padding: 6px 0 !important;
-  height: 45px !important;
-  max-height: 45px !important;
+  padding: 8px 0 !important;
+  height: 55px !important;
+  max-height: 55px !important;
   min-width: 0 !important;
-  font-size: 0.85rem !important;
+  font-size: 0.9rem !important;
   color: #888 !important;
   border: none !important;
   background: transparent !important;
@@ -584,26 +657,33 @@ body.ava-redesign-active .calendarmonth .day-number-circle {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 32px !important;
-  height: 32px !important;
+  width: 38px !important;
+  height: 38px !important;
   padding: 0 !important;
   margin: 0 auto !important;
   line-height: 1 !important;
+  border-radius: 0 !important;
 }
 body.ava-redesign-active .calendarmonth .day-number {
-  font-size: 0.85rem !important;
+  font-size: 0.9rem !important;
   line-height: 1.2 !important;
   display: block !important;
   width: 100% !important;
   text-align: center !important;
+  font-weight: 500 !important;
 }
 body.ava-redesign-active .calendarmonth td .d-md-none { display: none !important; }
 body.ava-redesign-active .calendarmonth td .d-none.d-md-block { display: block !important; }
 body.ava-redesign-active .calendarmonth [data-region="day-content"] { display: none !important; }
 body.ava-redesign-active .calendarmonth td .hidden { display: none !important; }
-body.ava-redesign-active .calendarmonth td.today .day-number-circle { background: #7B2FBE !important; color: #fff !important; }
+body.ava-redesign-active .calendarmonth td.today .day-number-circle { 
+  background: #7B2FBE !important; 
+  color: #fff !important; 
+}
 body.ava-redesign-active .calendarmonth td.today .day-number { color: #fff !important; }
-body.ava-redesign-active .calendarmonth td.hasevent { border-bottom: 2px solid #7B2FBE !important; }
+body.ava-redesign-active .calendarmonth td.hasevent { 
+  border-bottom: 2px solid #7B2FBE !important; 
+}
 body.ava-redesign-active .calendarmonth td.hasevent a.aalink { color: #9B4DCA !important; }
 body.ava-redesign-active .popover,
 body.ava-redesign-active .tooltip,
@@ -748,17 +828,37 @@ body.ava-redesign-active .ava-manual-link { color: #555 !important; font-size: 0
 body.ava-redesign-active .ava-manual-link:hover { color: #9B4DCA !important; }
 body.ava-redesign-active .ava-login-footer { position: fixed !important; bottom: 16px !important; color: #333 !important; font-size: 0.65rem !important; }
 @keyframes avaFadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-body.ava-redesign-active.page-mycourses #page-header { display: block !important; background: transparent !important; padding: 72px 24px 8px !important; }
+body.ava-redesign-active.page-mycourses #page-header { 
+  display: block !important; 
+  background: transparent !important; 
+  padding: 80px 32px 16px !important; 
+}
+body.ava-redesign-active.page-mycourses #page-header h1,
+body.ava-redesign-active.page-mycourses #page-header h2 {
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+  color: #E0E0E0 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  border-left: 4px solid #7B2FBE !important;
+  padding-left: 16px !important;
+}
 body.ava-redesign-active.page-mycourses #page-content,
 body.ava-redesign-active.page-mycourses #region-main,
 body.ava-redesign-active.page-mycourses [data-region="course-view-content"],
 body.ava-redesign-active.page-mycourses [data-region="courses-view"],
-body.ava-redesign-active.page-mycourses [data-region="myoverview"] { overflow: visible !important; height: auto !important; max-height: none !important; padding: 0 24px !important; width: 100% !important; }
+body.ava-redesign-active.page-mycourses [data-region="myoverview"] { 
+  overflow: visible !important; 
+  height: auto !important; 
+  max-height: none !important; 
+  padding: 0 32px !important; 
+  width: 100% !important; 
+}
 body.ava-redesign-active.page-mycourses .card-grid {
   display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
-  gap: 16px !important;
-  padding: 16px 0 !important;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+  gap: 20px !important;
+  padding: 24px 0 !important;
   overflow: visible !important;
   height: auto !important;
   max-height: none !important;
@@ -776,28 +876,32 @@ body.ava-redesign-active.page-mycourses .card-grid [class*="col-"] {
 }
 body.ava-redesign-active.page-mycourses .card {
   width: 100% !important;
-  height: 160px !important;
-  min-height: 160px !important;
-  max-height: 160px !important;
+  height: 180px !important;
+  min-height: 180px !important;
+  max-height: 180px !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
   align-items: center !important;
   text-align: center !important;
-  padding: 12px !important;
+  padding: 16px !important;
   background: #0f0f0f !important;
   border: 1px solid #1f1f1f !important;
   overflow: hidden !important;
   box-sizing: border-box !important;
+  transition: border-color 0.2s, transform 0.2s !important;
 }
-body.ava-redesign-active.page-mycourses .card:hover { border-color: #7B2FBE !important; }
+body.ava-redesign-active.page-mycourses .card:hover { 
+  border-color: #7B2FBE !important; 
+  transform: translateY(-2px) !important;
+}
 body.ava-redesign-active.page-mycourses .card-img-top,
 body.ava-redesign-active.page-mycourses .course-image,
 body.ava-redesign-active.page-mycourses .courseimage,
 body.ava-redesign-active.page-mycourses .dashboard-card-img { display: none !important; }
 body.ava-redesign-active.page-mycourses .card .course-info-container,
 body.ava-redesign-active.page-mycourses .card .card-body {
-  padding: 4px !important;
+  padding: 8px !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
@@ -810,19 +914,23 @@ body.ava-redesign-active.page-mycourses .coursename,
 body.ava-redesign-active.page-mycourses .multiline a,
 body.ava-redesign-active.page-mycourses .course-info-container a {
   color: #E0E0E0 !important;
-  font-size: 0.68rem !important;
+  font-size: 0.75rem !important;
   font-weight: 500 !important;
-  line-height: 1.4 !important;
+  line-height: 1.5 !important;
   text-align: center !important;
   word-break: break-word !important;
   overflow: hidden !important;
   display: -webkit-box !important;
-  -webkit-line-clamp: 5 !important;
+  -webkit-line-clamp: 6 !important;
   -webkit-box-orient: vertical !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
 }
 body.ava-redesign-active.page-mycourses .coursename:hover,
 body.ava-redesign-active.page-mycourses .multiline a:hover,
-body.ava-redesign-active.page-mycourses .course-info-container a:hover { color: #9B4DCA !important; }
+body.ava-redesign-active.page-mycourses .course-info-container a:hover { 
+  color: #9B4DCA !important; 
+}
 body.ava-redesign-active.page-mycourses .course-category,
 body.ava-redesign-active.page-mycourses .progress,
 body.ava-redesign-active.page-mycourses .course-card-actions { display: none !important; }
@@ -831,6 +939,10 @@ body.ava-redesign-active.page-mycourses [data-region="paging-bar"] .page-link {
   background: #0f0f0f !important;
   border-color: #2a2a2a !important;
   color: #9B4DCA !important;
+}
+body.ava-redesign-active.page-mycourses [data-region="paging-bar"] .page-link:hover {
+  background: #141414 !important;
+  border-color: #7B2FBE !important;
 }
 body.ava-redesign-active .bg-pulse-grey { background: #1a1a1a !important; animation: avaPulse 1.5s ease-in-out infinite !important; }
 @keyframes avaPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
