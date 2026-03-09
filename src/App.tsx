@@ -919,14 +919,12 @@ async function downloadExtension(browser: 'chrome' | 'firefox') {
   try {
     const zip = new JSZip();
     zip.file('manifest.json',         browser === 'chrome' ? MANIFEST_CHROME : MANIFEST_FIREFOX);
-    zip.file('manifest-chrome.json',  MANIFEST_CHROME);
-    zip.file('manifest-firefox.json', MANIFEST_FIREFOX);
     zip.file('content.js',            CONTENT_JS);
     zip.file('style.css',             STYLE_CSS);
     zip.file('popup.html',            POPUP_HTML);
     zip.file('popup.js',              POPUP_JS);
     zip.file('popup.css',             POPUP_CSS);
-    const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+    const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/zip', compression: 'DEFLATE' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href     = url;
@@ -934,7 +932,7 @@ async function downloadExtension(browser: 'chrome' | 'firefox') {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
     btn.textContent = 'baixando...';
     btn.className   = 'dl-btn done';
     setTimeout(() => { btn.textContent = orig; btn.disabled = false; btn.className = 'dl-btn'; }, 2500);
