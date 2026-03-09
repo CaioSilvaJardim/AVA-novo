@@ -93,6 +93,16 @@ const CONTENT_JS = `/* =============================================
     document.querySelectorAll('*[style*="ava"]').forEach(function(el) {
       el.removeAttribute('style');
     });
+    document.querySelectorAll('.card-grid').forEach(function(el) {
+      el.removeAttribute('style');
+      el.classList.add('flex-nowrap', 'overflow-hidden', 'row', 'row-cols-1', 'row-cols-sm-2', 'row-cols-md-3', 'mx-0');
+    });
+    document.querySelectorAll('.calendarmonth, .maincalendar, .card-body[data-block="calendar_month"]').forEach(function(el) {
+      el.removeAttribute('style');
+    });
+    document.querySelectorAll('[data-region="course-view-content"], [data-region="courses-view"]').forEach(function(el) {
+      el.removeAttribute('style');
+    });
     api.storage.local.set({ extensionActive: false });
     location.reload();
   }
@@ -531,26 +541,26 @@ body.ava-redesign-active section[data-block="calendar_upcoming"] .event:hover { 
 body.ava-redesign-active section[data-block="calendar_upcoming"] .event h6 a { color: #E0E0E0 !important; font-size: 0.8rem !important; }
 body.ava-redesign-active section[data-block="calendar_upcoming"] .date { color: #666 !important; font-size: 0.7rem !important; }
 body.ava-redesign-active section[data-block="calendar_month"] { overflow: visible !important; }
-body.ava-redesign-active section[data-block="calendar_month"] .maincalendar { transform: scale(0.85) !important; transform-origin: top center !important; overflow: visible !important; margin-top: -20px !important; }
-body.ava-redesign-active section[data-block="calendar_month"] .card-body { height: 320px !important; overflow: visible !important; padding: 8px !important; }
+body.ava-redesign-active section[data-block="calendar_month"] .maincalendar { transform: scale(0.95) !important; transform-origin: top center !important; overflow: visible !important; margin-top: -10px !important; }
+body.ava-redesign-active section[data-block="calendar_month"] .card-body { height: 380px !important; overflow: visible !important; padding: 12px !important; }
 body.ava-redesign-active section[data-block="calendar_month"] .footer,
 body.ava-redesign-active section[data-block="calendar_month"] .header { display: none !important; }
 body.ava-redesign-active .calendar-controls {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  padding: 6px 4px !important;
-  margin-bottom: 6px !important;
+  padding: 8px 6px !important;
+  margin-bottom: 8px !important;
 }
-body.ava-redesign-active .calendar-controls h4.current { font-size: 0.85rem !important; color: #E0E0E0 !important; margin: 0 !important; }
-body.ava-redesign-active .calendar-controls .arrow_link { font-size: 0.8rem !important; color: #9B4DCA !important; padding: 4px 8px !important; }
+body.ava-redesign-active .calendar-controls h4.current { font-size: 0.9rem !important; color: #E0E0E0 !important; margin: 0 !important; }
+body.ava-redesign-active .calendar-controls .arrow_link { font-size: 0.85rem !important; color: #9B4DCA !important; padding: 6px 10px !important; }
 body.ava-redesign-active .calendar-controls .arrow_text { display: none !important; }
 body.ava-redesign-active .calendarmonth { width: 100% !important; table-layout: fixed !important; border-collapse: collapse !important; }
 body.ava-redesign-active .calendarmonth thead th {
-  font-size: 0.7rem !important;
+  font-size: 0.75rem !important;
   color: #555 !important;
   text-align: center !important;
-  padding: 6px 0 !important;
+  padding: 8px 0 !important;
   border: none !important;
   background: transparent !important;
   font-weight: 400 !important;
@@ -558,11 +568,11 @@ body.ava-redesign-active .calendarmonth thead th {
 body.ava-redesign-active .calendarmonth td {
   text-align: center !important;
   vertical-align: middle !important;
-  padding: 4px 0 !important;
-  height: 38px !important;
-  max-height: 38px !important;
+  padding: 6px 0 !important;
+  height: 45px !important;
+  max-height: 45px !important;
   min-width: 0 !important;
-  font-size: 0.8rem !important;
+  font-size: 0.85rem !important;
   color: #888 !important;
   border: none !important;
   background: transparent !important;
@@ -574,14 +584,14 @@ body.ava-redesign-active .calendarmonth .day-number-circle {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 28px !important;
-  height: 28px !important;
+  width: 32px !important;
+  height: 32px !important;
   padding: 0 !important;
   margin: 0 auto !important;
   line-height: 1 !important;
 }
 body.ava-redesign-active .calendarmonth .day-number {
-  font-size: 0.8rem !important;
+  font-size: 0.85rem !important;
   line-height: 1.2 !important;
   display: block !important;
   width: 100% !important;
